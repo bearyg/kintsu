@@ -1,0 +1,56 @@
+steps:
+  # 1. Build Backend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest', './backend']
+  
+  # 2. Push Backend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest']
+
+  # 3. Deploy Backend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'kintsu-backend'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '1024Mi'
+      - '--timeout'
+      - '300s'
+      - '--set-env-vars'
+      - 'ENVIRONMENT=production'
+      - '--set-secrets'
+      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest'
+
+  # 4. Install Frontend Dependencies
+  - name: 'node:18'
+    dir: 'kintsu-app'
+    entrypoint: npm
+    args: ['install']
+
+  # 5. Build Frontend
+  - name: 'node:18'
+    dir: 'kintsu-app'
+    entrypoint: npm
+    args: ['run', 'build']
+
+  # 6. Deploy Frontend to Firebase
+  - name: 'node:18'
+    dir: 'kintsu-app'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        npm install -g firebase-tools
+        firebase deploy --only hosting --project $PROJECT_ID --non-interactive
+
+options:
+  logging: CLOUD_LOGGING_ONLY
