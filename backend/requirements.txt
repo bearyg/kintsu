@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+google-cloud-storage
+google-cloud-firestore
+google-generativeai
+python-multipart
+requests
+pandas
