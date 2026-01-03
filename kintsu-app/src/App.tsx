@@ -8,7 +8,7 @@ import { DriveService } from './DriveService';
 
 // --- Configuration ---
 const CLIENT_ID = "351476623210-j0s46m1ermc27qlret2rdn1iqg6re013.apps.googleusercontent.com";
-const API_KEY = "AIzaSyClOOjS0sQ2GN1F5e_vdhg4D1cB0lIacPA";
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
 // --- Types ---
 interface ExtractedData {
