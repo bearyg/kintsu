@@ -175,14 +175,23 @@ function App() {
   const handleScan = async () => {
     setIsScanning(true);
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isDebug = urlParams.get('debug') === 'on';
+
       const files = await DriveService.listHopperFiles();
       const existingIds = new Set(shards.map(s => s.id));
 
       for (const file of files) {
         const shardId = `drive_${file.id}`;
         if (!existingIds.has(shardId)) {
-          console.log(`Sending for refinement: ${file.name}`);
-          await fetch(`${API_BASE}/api/refine-drive-file`, {
+          console.log(`Sending for refinement: ${file.name}${isDebug ? ' (DEBUG ON)' : ''}`);
+          
+          const apiUrl = new URL(`${API_BASE}/api/refine-drive-file`);
+          if (isDebug) {
+              apiUrl.searchParams.append('debug', 'on');
+          }
+
+          await fetch(apiUrl.toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
