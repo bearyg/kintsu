@@ -215,9 +215,13 @@ async def process_drive_file_background(req: RefineRequest):
         log("Cleanup complete.", debug=req.debug_mode)
 
 @app.post("/api/refine-drive-file")
-async def refine_drive_file(req: RefineRequest, background_tasks: BackgroundTasks):
+async def refine_drive_file(req: RefineRequest, background_tasks: BackgroundTasks, debug: Optional[str] = None):
+    # Override debug_mode if query param is present
+    if debug and debug.lower() in ['on', 'true', '1']:
+        req.debug_mode = True
+        
     background_tasks.add_task(process_drive_file_background, req)
-    return {"status": "queued", "message": f"Processing {req.fileName} in background"}
+    return {"status": "queued", "message": f"Processing {req.fileName} in background (Debug: {req.debug_mode})"}
 
 if __name__ == "__main__":
     import uvicorn
