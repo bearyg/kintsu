@@ -23,6 +23,9 @@
         3. Save excluded items to a new Firestore collection `debug_excluded_items`.
         4. Ensure `order_id` is saved with valid shards.
     - **File:** `backend/main.py`
+- [x] Task: Update API endpoint to accept `?debug=on`.
+    - **Details:** Modify `refine_drive_file` to accept an optional `debug` query parameter and set `req.debug_mode` accordingly.
+    - **File:** `backend/main.py`
 
 ## Phase 4: Verification
 - [x] Task: Verify with `verify_amazon_filter.py`.
