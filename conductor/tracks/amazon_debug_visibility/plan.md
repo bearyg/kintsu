@@ -1,12 +1,12 @@
 # Plan: Amazon Filtering Debug Visibility
 
 ## Phase 1: Base Processor Refactor
-- [ ] Task: Update `BaseProcessor.process` signature.
+- [x] Task: Update `BaseProcessor.process` signature.
     - **Details:** Change return type hint and docstring. It should support returning extra debug info. To avoid breaking everything immediately, we can make it return `(shards, debug_info)`.
     - **File:** `backend/processors/base.py`
 
 ## Phase 2: Amazon Processor Update
-- [ ] Task: Update `AmazonProcessor.process` to collect excluded items.
+- [x] Task: Update `AmazonProcessor.process` to collect excluded items.
     - **Details:**
         1. Accept `debug=False` kwarg.
         2. Initialize `excluded = []`.
@@ -16,7 +16,7 @@
     - **File:** `backend/processors/amazon.py`
 
 ## Phase 3: Main Pipeline Integration
-- [ ] Task: Update `process_drive_file_background` in `main.py`.
+- [x] Task: Update `process_drive_file_background` in `main.py`.
     - **Details:**
         1. Handle the new tuple return from `processor.process`.
         2. If `req.debug_mode` is True, iterate over `excluded` items.
@@ -25,6 +25,6 @@
     - **File:** `backend/main.py`
 
 ## Phase 4: Verification
-- [ ] Task: Verify with `verify_amazon_filter.py`.
+- [x] Task: Verify with `verify_amazon_filter.py`.
     - **Details:** Update the verification script to call `process` with `debug=True` and assert that "Returned Item" appears in the excluded list with the correct reason.
     - **File:** `verify_amazon_filter.py`

@@ -75,12 +75,15 @@ class AmazonProcessor(BaseProcessor):
             print(f"[AmazonProcessor] Error parsing returns: {e}")
         return returned_ids
 
-    def process(self, file_path: str, original_filename: str, sibling_files: List[str] = None) -> List[Dict[str, Any]]:
+    def process(self, file_path: str, original_filename: str, sibling_files: List[str] = None, **kwargs) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         shards = []
+        excluded = []
+        debug_mode = kwargs.get('debug', False)
+
         try:
             if not file_path.endswith('.csv'):
                 print(f"[AmazonProcessor] Skipping non-CSV file: {file_path}")
-                return []
+                return [], []
 
             # --- RETURNS CONTEXT ---
             returned_order_ids = set()
@@ -96,7 +99,7 @@ class AmazonProcessor(BaseProcessor):
                 df = pd.read_csv(file_path)
             except Exception as e:
                 print(f"[AmazonProcessor] Pandas read error: {e}")
-                return []
+                return [], []
 
             cols = df.columns.tolist()
             cols_lower = [c.lower() for c in cols]
@@ -115,7 +118,7 @@ class AmazonProcessor(BaseProcessor):
             
             if not col_desc or not col_price:
                 print("[AmazonProcessor] Critical columns not found. Falling back.")
-                return []
+                return [], []
 
             # Iterate Rows
             for index, row in df.iterrows():
@@ -127,11 +130,25 @@ class AmazonProcessor(BaseProcessor):
                     order_id = str(row[col_id]) if col_id else None
                     
                     if 'returned' in status.lower() or 'cancelled' in status.lower():
+                        if debug_mode:
+                            excluded.append({
+                                "item_name": desc,
+                                "reason": "status_returned_or_cancelled",
+                                "order_id": order_id,
+                                "original_row": index
+                            })
                         continue
                     
                     # --- NEW: RETURNED ORDER FILTER ---
                     if order_id and order_id in returned_order_ids:
                         print(f"[AmazonProcessor] Skipping returned item: {desc} (Order {order_id})")
+                        if debug_mode:
+                            excluded.append({
+                                "item_name": desc,
+                                "reason": "found_in_returns_file",
+                                "order_id": order_id,
+                                "original_row": index
+                            })
                         continue
                         
                     try:
@@ -142,6 +159,14 @@ class AmazonProcessor(BaseProcessor):
                     # --- ASSET TRIAGE ---
                     if not self.is_likely_asset(desc, price):
                         # Skip noise
+                        if debug_mode:
+                             excluded.append({
+                                "item_name": desc,
+                                "reason": "asset_triage_filtered",
+                                "order_id": order_id,
+                                "price": price,
+                                "original_row": index
+                            })
                         continue
 
                     shard_data = {
@@ -152,6 +177,7 @@ class AmazonProcessor(BaseProcessor):
                         "merchant": "Amazon",
                         "confidence": "High", 
                         "category": "Uncategorized", 
+                        "order_id": order_id, # Added OrderID
                         "source_meta": {
                             "original_row": index,
                             "status": status,
@@ -165,8 +191,10 @@ class AmazonProcessor(BaseProcessor):
                     continue
 
             print(f"[AmazonProcessor] Extracted {len(shards)} valid items.")
-            return shards
+            if debug_mode:
+                print(f"[AmazonProcessor] Captured {len(excluded)} excluded items.")
+            return shards, excluded
 
         except Exception as e:
             print(f"[AmazonProcessor] Critical Error: {e}")
-            return []
+            return [], []

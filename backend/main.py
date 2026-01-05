@@ -154,7 +154,16 @@ async def process_drive_file_background(req: RefineRequest):
             # 1. Try Specialized Processors
             if amazon_processor.can_process(file_path, req.source_type):
                 log(f"Routing {file_name} to AmazonProcessor", debug=req.debug_mode)
-                shards = amazon_processor.process(file_path, file_name, sibling_files=sibling_files)
+                
+                # Unpack tuple: shards, excluded
+                shards, excluded_items = amazon_processor.process(
+                    file_path, 
+                    file_name, 
+                    sibling_files=sibling_files, 
+                    debug=req.debug_mode
+                )
+                
+                # Save Valid Shards
                 for i, shard_data in enumerate(shards):
                     shard_id = f"amazon_{req.file_id}_{i}"
                     final_shard = {
@@ -167,6 +176,24 @@ async def process_drive_file_background(req: RefineRequest):
                         "createdAt": firestore.SERVER_TIMESTAMP
                     }
                     await save_shard(final_shard, shard_id)
+
+                # Save Excluded Items (Debug Mode)
+                if req.debug_mode and excluded_items:
+                    log(f"Saving {len(excluded_items)} excluded items for debug.", debug=True)
+                    batch = db.batch()
+                    for i, item in enumerate(excluded_items):
+                        debug_id = f"debug_excl_{req.file_id}_{i}"
+                        doc_ref = db.collection("debug_excluded_items").document(debug_id)
+                        batch.set(doc_ref, {
+                            "fileName": file_name,
+                            "parentZip": req.fileName,
+                            "reason": item.get('reason'),
+                            "item": item,
+                            "createdAt": firestore.SERVER_TIMESTAMP
+                        })
+                        # Commit in batches of 500 if needed, but simple for now
+                    batch.commit()
+
                 continue
 
             # 2. Fallback to Generic Gemini

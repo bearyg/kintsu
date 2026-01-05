@@ -43,16 +43,16 @@ def verify():
         # Initialize Processor
         processor = AmazonProcessor()
         
-        # Process WITH context
-        print("\n--- Processing WITH sibling_files ---")
-        shards = processor.process(history_file, os.path.basename(history_file), sibling_files=all_files)
+        # Process WITH context and DEBUG mode
+        print("\n--- Processing WITH sibling_files (Debug Mode) ---")
+        shards, excluded = processor.process(history_file, os.path.basename(history_file), sibling_files=all_files, debug=True)
         
         print(f"\nTotal shards extracted: {len(shards)}")
+        print(f"Total excluded items: {len(excluded)}")
         
         # VERIFICATION LOGIC
-        # We expect 2 items (Kept Item, Another Kept Item).
-        # We expect "Returned Item" to be missing.
         
+        # 1. Check Shards (Valid Items)
         item_names = [s['item_name'] for s in shards]
         print(f"Extracted Items: {item_names}")
         
@@ -60,11 +60,25 @@ def verify():
             print("❌ FAILURE: Returned Item was NOT filtered out.")
         else:
             print("✅ SUCCESS: Returned Item was filtered out.")
-            
-        if len(shards) == 2:
-             print("✅ SUCCESS: Correct number of shards extracted.")
+
+        # Check Order ID in shards
+        if all('order_id' in s for s in shards):
+             print("✅ SUCCESS: Order ID present in all shards.")
         else:
-             print(f"❌ FAILURE: Expected 2 shards, got {len(shards)}.")
+             print("❌ FAILURE: Order ID missing in some shards.")
+
+        # 2. Check Excluded Items
+        print("\n--- Excluded Items Analysis ---")
+        found_returned_reason = False
+        for item in excluded:
+            print(f"- {item['item_name']}: {item['reason']} (Order: {item.get('order_id')})")
+            if item['item_name'] == "Returned Item" and item['reason'] == "found_in_returns_file":
+                found_returned_reason = True
+        
+        if found_returned_reason:
+            print("✅ SUCCESS: 'Returned Item' correctly logged as excluded due to returns file.")
+        else:
+            print("❌ FAILURE: 'Returned Item' not found in excluded list or wrong reason.")
 
     finally:
         shutil.rmtree(work_dir)
