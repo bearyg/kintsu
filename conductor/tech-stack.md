@@ -4,6 +4,7 @@
 *   **Current Implementation:** React 19 (Vite) + TypeScript + Tailwind CSS.
 *   **Note:** Vision document mentions Flutter/React Native for mobile capabilities (Camera/Voice). Current codebase is React-based web app.
 *   **UI Library:** Lucide React (Icons).
+*   **Testing:** Vitest + React Testing Library.
 *   **Hosting:** Firebase Hosting.
 
 ## Backend (The Refinery)
