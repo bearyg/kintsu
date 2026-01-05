@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus } from 'lucide-react';
+import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus, Mail } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
@@ -66,6 +66,7 @@ function App() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [isScanningGmail, setIsScanningGmail] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   // Drive Browser State
@@ -210,6 +211,29 @@ function App() {
     }
   };
 
+  const handleScanGmail = async () => {
+    setIsScanningGmail(true);
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isDebug = urlParams.get('debug') === 'on';
+
+      await fetch(`${API_BASE}/api/scan-gmail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token: DriveService.accessToken,
+          debug_mode: isDebug
+        })
+      });
+      alert("Gmail scan initiated!");
+    } catch (e) {
+      console.error("Gmail scan error:", e);
+      alert("Failed to start Gmail scan.");
+    } finally {
+      setIsScanningGmail(false);
+    }
+  };
+
   const handleLogin = async () => {
     try {
       await DriveService.signIn();
@@ -350,6 +374,17 @@ function App() {
                         title="New Folder"
                     >
                         <Plus className="w-4 h-4" />
+                    </button>
+                    <button 
+                        onClick={handleScanGmail} 
+                        disabled={isScanningGmail}
+                        className={cn(
+                            "p-2 hover:bg-white rounded-lg transition-colors",
+                            isScanningGmail ? "text-[#D4AF37] animate-pulse" : "text-slate-500"
+                        )}
+                        title="Scan Gmail"
+                    >
+                        <Mail className="w-4 h-4" />
                     </button>
                     <button 
                         onClick={handleScan} 

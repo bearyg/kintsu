@@ -14,6 +14,7 @@ from storage import LocalStorageAdapter, GCSAdapter
 import google.generativeai as genai
 from google.cloud import firestore
 from processors.amazon import AmazonProcessor
+from processors.gmail import GmailProcessor
 
 app = FastAPI()
 
@@ -41,6 +42,12 @@ class RefineRequest(BaseModel):
     fileName: str
     access_token: str
     source_type: str
+    debug_mode: bool = False
+
+class GmailScanRequest(BaseModel):
+    access_token: str
+    query: Optional[str] = "subject:(order OR confirmation OR receipt OR invoice)"
+    max_results: int = 10
     debug_mode: bool = False
 
 def log(message: str, debug: bool = False, is_error: bool = False):
@@ -111,6 +118,89 @@ async def process_single_file(file_path: str, mime_type: str, original_filename:
         
     except Exception as e:
         log(f"Error processing {original_filename}: {e}", is_error=True)
+
+async def process_gmail_scan_background(req: GmailScanRequest):
+    log(f"Starting Gmail scan: {req.query}", debug=req.debug_mode)
+    try:
+        processor = GmailProcessor(req.access_token)
+        message_ids = processor.search_emails(query=req.query, max_results=req.max_results)
+        log(f"Found {len(message_ids)} emails to process.")
+
+        for msg_id in message_ids:
+            try:
+                message = processor.get_email_details(msg_id)
+                metadata = processor.extract_metadata(message)
+                body = processor.parse_body(message)
+                
+                log(f"Processing email: {metadata['subject']} from {metadata['from']}", debug=req.debug_mode)
+                
+                # Create a shard for the email body itself if it's substantial
+                if len(body) > 100:
+                    shard_id = f"gmail_body_{msg_id}"
+                    
+                    # Check if already exists to avoid duplicates
+                    doc = db.collection("shards").document(shard_id).get()
+                    if not doc.exists:
+                        # Use Gemini to refine the email body
+                        model = genai.GenerativeModel('gemini-2.5-pro')
+                        prompt = f"""
+                        Analyze this email content from {metadata['from']} about {metadata['subject']}.
+                        Extract financial record details (order, receipt, etc).
+                        
+                        Return ONLY JSON:
+                        {{
+                            "item_name": "Product or Service name",
+                            "merchant": "Store Name",
+                            "date": "{metadata['date']}",
+                            "total_amount": number,
+                            "currency": "USD",
+                            "category": "Type",
+                            "confidence": "High/Med/Low"
+                        }}
+                        
+                        Email Body:
+                        {body[:4000]} 
+                        """
+                        
+                        gen_resp = model.generate_content(prompt)
+                        text = gen_resp.text
+                        
+                        extracted_data = {}
+                        try:
+                            clean_text = text.replace('```json', '').replace('```', '').strip()
+                            match = re.search(r'\{.*\}', clean_text, re.DOTALL)
+                            if match: clean_text = match.group(0)
+                            extracted_data = json.loads(clean_text)
+                        except json.JSONDecodeError:
+                            log(f"JSON Parse Error for email {msg_id}.", is_error=True)
+                            extracted_data = {"item_name": metadata['subject'], "raw_analysis": text, "confidence": "Low"}
+                        
+                        shard_data = {
+                            "id": shard_id,
+                            "fileName": f"Email: {metadata['subject']}",
+                            "sourceType": "Gmail",
+                            "status": "refined",
+                            "extractedData": extracted_data,
+                            "createdAt": firestore.SERVER_TIMESTAMP
+                        }
+                        await save_shard(shard_data, shard_id)
+                
+                # Also handle attachments
+                payload = message.get('payload', {})
+                parts = payload.get('parts', [])
+                for part in parts:
+                    if part.get('filename'):
+                        log(f"Found attachment: {part['filename']} in email {msg_id}", debug=req.debug_mode)
+                        # We could download and process attachments here similar to Drive files
+                        # For now, let's focus on body extraction as proof of concept
+                        # TODO: Phase 3 attachment processing integration
+                        pass
+
+            except Exception as msg_err:
+                log(f"Error processing message {msg_id}: {msg_err}", is_error=True)
+
+    except Exception as e:
+        log(f"Gmail Scan Error: {e}", is_error=True)
 
 async def process_drive_file_background(req: RefineRequest):
     log(f"Starting background process for: {req.fileName}", debug=req.debug_mode)
@@ -222,6 +312,11 @@ async def refine_drive_file(req: RefineRequest, background_tasks: BackgroundTask
         
     background_tasks.add_task(process_drive_file_background, req)
     return {"status": "queued", "message": f"Processing {req.fileName} in background (Debug: {req.debug_mode})"}
+
+@app.post("/api/scan-gmail")
+async def scan_gmail(req: GmailScanRequest, background_tasks: BackgroundTasks):
+    background_tasks.add_task(process_gmail_scan_background, req)
+    return {"status": "queued", "message": f"Gmail scan initiated for query: {req.query}"}
 
 if __name__ == "__main__":
     import uvicorn

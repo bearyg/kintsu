@@ -6,7 +6,7 @@ import { DriveService } from './DriveService';
 vi.mock('gapi-script', () => {
   return {
     gapi: {
-      load: vi.fn((libs, callback) => callback()),
+      load: vi.fn((_libs, callback) => callback()),
       client: {
         init: vi.fn().mockResolvedValue(undefined),
         setToken: vi.fn(),
@@ -23,8 +23,8 @@ vi.mock('gapi-script', () => {
 
 // Mock window.google
 const mockInitTokenClient = vi.fn();
-global.window = global.window || {};
-global.window.google = {
+(globalThis as any).window = (globalThis as any).window || {};
+(globalThis as any).window.google = {
   accounts: {
     oauth2: {
       initTokenClient: mockInitTokenClient
