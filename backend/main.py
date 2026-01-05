@@ -148,12 +148,13 @@ async def process_drive_file_background(req: RefineRequest):
 
         # Processing Loop
         amazon_processor = AmazonProcessor()
+        sibling_files = [f[0] for f in files_to_process]
 
         for file_path, file_name in files_to_process:
             # 1. Try Specialized Processors
             if amazon_processor.can_process(file_path, req.source_type):
                 log(f"Routing {file_name} to AmazonProcessor", debug=req.debug_mode)
-                shards = amazon_processor.process(file_path, file_name)
+                shards = amazon_processor.process(file_path, file_name, sibling_files=sibling_files)
                 for i, shard_data in enumerate(shards):
                     shard_id = f"amazon_{req.file_id}_{i}"
                     final_shard = {

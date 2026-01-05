@@ -10,7 +10,7 @@ class BaseProcessor(ABC):
         pass
 
     @abstractmethod
-    def process(self, file_path: str, original_filename: str) -> List[Dict[str, Any]]:
+    def process(self, file_path: str, original_filename: str, sibling_files: List[str] = None) -> List[Dict[str, Any]]:
         """
         Process the file and return a list of Shard data dictionaries.
         """
