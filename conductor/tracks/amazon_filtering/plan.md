@@ -25,5 +25,5 @@
     - **File:** `backend/main.py`
 
 ## Phase 5: Verification
-- [ ] Task: Verify with provided sample data.
+- [x] Task: Verify with provided sample data.
     - **Details:** Run the processor against the `Retail.OrderHistory` and ensure items with IDs from `Retail.OrdersReturned` are NOT in the output shards.
