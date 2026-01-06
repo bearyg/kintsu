@@ -1,6 +1,6 @@
 import functions_framework
 from google.cloud import storage, firestore
-import google.generativeai as genai
+from google import genai
 import os
 import json
 import zipfile
@@ -14,8 +14,12 @@ db = firestore.Client()
 
 # Configure Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Failed to initialize Gemini Client: {e}")
 
 def handle_zip_archive(bucket, blob):
     """
@@ -50,6 +54,10 @@ def extract_data_with_gemini(blob, mime_type):
     """
     Uses Gemini 2.5 Pro to extract structured data from the file.
     """
+    if not client:
+        print("Gemini Client not initialized.")
+        return None
+
     print(f"Starting Gemini 2.5 Pro extraction for {blob.name} ({mime_type})")
     
     # 1. Download to temp file
@@ -58,15 +66,15 @@ def extract_data_with_gemini(blob, mime_type):
 
     try:
         # 2. Upload to Gemini
-        gemini_file = genai.upload_file(path=temp_local_filename, mime_type=mime_type)
+        # New API uses client.files.upload
+        gemini_file = client.files.upload(file=temp_local_filename, config={'mime_type': mime_type})
         
-        # Wait for processing if necessary (mostly for video, but good practice)
+        # Wait for processing if necessary
         while gemini_file.state.name == "PROCESSING":
             time.sleep(2)
-            gemini_file = genai.get_file(gemini_file.name)
+            gemini_file = client.files.get(name=gemini_file.name)
 
         # 3. Generate Content
-        model = genai.GenerativeModel('gemini-2.5-pro')
         prompt = """
         Analyze this document/image for a property insurance claim. 
         Extract the following fields and return ONLY a valid JSON object:
@@ -82,13 +90,21 @@ def extract_data_with_gemini(blob, mime_type):
         If a field is not found, use null.
         """
         
-        response = model.generate_content([prompt, gemini_file])
+        response = client.models.generate_content(
+            model='gemini-2.5-pro',
+            contents=[prompt, gemini_file]
+        )
         
-        # Cleanup Gemini file
-        genai.delete_file(gemini_file.name)
+        # Cleanup Gemini file (New API usually keeps files for 48h, but good to clean if ephemeral)
+        # client.files.delete(name=gemini_file.name) # Optional based on policy
         
         # Parse JSON response
         text = response.text.replace('```json', '').replace('```', '').strip()
+        match = None
+        import re
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        if match: text = match.group(0)
+            
         return json.loads(text)
 
     except Exception as e:
@@ -170,5 +186,3 @@ def process_new_shard(cloud_event):
             })
     else:
         print(f"Skipping refinement for {blob.content_type}")
-
-

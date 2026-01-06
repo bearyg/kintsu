@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-import google.generativeai as genai
+from google import genai
 from google.cloud import firestore
 
 # Configure Logging
@@ -31,8 +31,12 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 AMAZON_PROCESSOR_URL = os.getenv("AMAZON_PROCESSOR_URL") # e.g., https://...
 GMAIL_INGEST_URL = os.getenv("GMAIL_INGEST_URL")       # e.g., https://...
 
+client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        logger.error(f"Failed to initialize Gemini Client: {e}")
 
 db = firestore.Client()
 
@@ -71,9 +75,12 @@ async def process_single_file_generic(file_path: str, mime_type: str, original_f
     try:
         if debug_mode: logger.info(f"Processing single file (Generic): {original_filename} ({mime_type})")
         
+        if not client:
+             logger.error("Gemini Client not configured.")
+             return
+
         # Upload to Gemini
-        gemini_file = genai.upload_file(path=file_path, mime_type=mime_type)
-        model = genai.GenerativeModel('gemini-2.5-pro')
+        gemini_file = client.files.upload(file=file_path, config={'mime_type': mime_type})
         
         prompt = """
         Analyze this document for an insurance claim. 
@@ -89,8 +96,11 @@ async def process_single_file_generic(file_path: str, mime_type: str, original_f
         }
         """
         
-        gen_resp = model.generate_content([prompt, gemini_file])
-        text = gen_resp.text
+        response = client.models.generate_content(
+            model='gemini-2.5-pro',
+            contents=[prompt, gemini_file]
+        )
+        text = response.text
         
         extracted_data = {}
         try:

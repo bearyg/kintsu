@@ -7,8 +7,11 @@ declare global {
 }
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const BASE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
-const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
+
+const SCOPES = {
+  DRIVE: 'https://www.googleapis.com/auth/drive.file',
+  GMAIL: 'https://www.googleapis.com/auth/gmail.readonly'
+};
 
 export class DriveService {
   static tokenClient: any;
@@ -31,7 +34,7 @@ export class DriveService {
           if (window.google) {
             this.tokenClient = window.google.accounts.oauth2.initTokenClient({
               client_id: clientId,
-              scope: BASE_SCOPES,
+              scope: SCOPES.DRIVE, // STRICTLY Drive scope only for init
               callback: (tokenResponse: any) => {
                 if (tokenResponse && tokenResponse.access_token) {
                   this.accessToken = tokenResponse.access_token;
@@ -74,8 +77,8 @@ export class DriveService {
         }
       };
 
-      // Request token (triggers popup) with base scopes
-      this.tokenClient.requestAccessToken({ prompt: 'consent', scope: BASE_SCOPES });
+      // Request token (triggers popup) with base scopes ONLY
+      this.tokenClient.requestAccessToken({ prompt: 'consent', scope: SCOPES.DRIVE });
     });
   }
 
@@ -83,8 +86,8 @@ export class DriveService {
       return new Promise((resolve, reject) => {
         if (!this.tokenClient) return reject("Token Client not initialized");
 
-        // Check if we already have it (heuristic)
-        if (this.grantedScopes.has(GMAIL_SCOPES) || this.grantedScopes.has('https://www.googleapis.com/auth/gmail.readonly')) {
+        // Check if we already have it
+        if (this.grantedScopes.has(SCOPES.GMAIL)) {
             resolve();
             return;
         }
@@ -102,11 +105,8 @@ export class DriveService {
             }
         };
 
-        // Request combined scopes (Incremental auth requires requesting ALL needed scopes, not just new ones, usually)
-        // GIS is smart, but best practice is to include accumulated scopes or just the new one if we want to "add" it.
-        // Actually, requesting just the new one returns a token valid for the new one. 
-        // If we want a token valid for BOTH, we must request BOTH.
-        const combinedScopes = `${BASE_SCOPES} ${GMAIL_SCOPES}`;
+        // Incremental auth: Request BOTH scopes to get a combined token
+        const combinedScopes = `${SCOPES.DRIVE} ${SCOPES.GMAIL}`;
         this.tokenClient.requestAccessToken({ prompt: 'consent', scope: combinedScopes });
       });
   }

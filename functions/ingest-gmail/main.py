@@ -4,18 +4,22 @@ import json
 import re
 import logging
 from google.cloud import firestore
-import google.generativeai as genai
+from google import genai
 from processor import GmailProcessor
 
 # Configure Logging
-logging.basicConfig(level=logging.INFO)
+# We rely on the container's logging configuration but allow runtime adjustment
 logger = logging.getLogger(__name__)
 
 db = firestore.Client()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        logger.error(f"Failed to initialize Gemini Client: {e}")
 else:
     logger.warning("GEMINI_API_KEY not set. Body analysis will fail.")
 
@@ -37,14 +41,18 @@ def ingest_gmail(request):
         debug_mode = req_json.get('debug_mode', False)
         trace_id = req_json.get('trace_id')
 
-        if not access_token:
-             return {"error": "Missing access_token"}, 400
-
+        # Adjust logging level based on request
         if debug_mode:
+            logging.getLogger().setLevel(logging.DEBUG)
             logger.setLevel(logging.DEBUG)
             logger.info(f"DEBUG MODE ENABLED for Gmail Scan (Trace: {trace_id}). Query: {query}")
         else:
+            logging.getLogger().setLevel(logging.INFO)
+            logger.setLevel(logging.INFO)
             logger.info(f"Starting Gmail scan (Trace: {trace_id}): {query}")
+
+        if not access_token:
+             return {"error": "Missing access_token"}, 400
 
         try:
             logger.debug(f"Initializing GmailProcessor with token: {access_token[:10]}...")
@@ -82,12 +90,12 @@ def ingest_gmail(request):
                     
                     doc = db.collection("shards").document(shard_id).get()
                     if not doc.exists:
-                        if not GEMINI_API_KEY:
-                            logger.error("Skipping body analysis due to missing API Key")
+                        if not client:
+                            logger.error("Skipping body analysis due to missing Gemini Client")
                             continue
 
                         logger.debug(f"Refining email body with Gemini for {shard_id}")
-                        model = genai.GenerativeModel('gemini-2.5-pro')
+                        
                         prompt = f"""
                         Analyze this email content from {metadata['from']} about {metadata['subject']}.
                         Extract financial record details (order, receipt, etc).
@@ -107,18 +115,22 @@ def ingest_gmail(request):
                         {body[:4000]} 
                         """
                         
-                        gen_resp = model.generate_content(prompt)
-                        text = gen_resp.text
-                        
-                        extracted_data = {}
                         try:
+                            response = client.models.generate_content(
+                                model='gemini-2.5-pro',
+                                contents=prompt
+                            )
+                            text = response.text
+                            
+                            extracted_data = {}
                             clean_text = text.replace('```json', '').replace('```', '').strip()
                             match = re.search(r'\{.*\}', clean_text, re.DOTALL)
                             if match: clean_text = match.group(0)
                             extracted_data = json.loads(clean_text)
-                        except json.JSONDecodeError:
-                            logger.error(f"JSON Parse Error for email {msg_id}.")
-                            extracted_data = {"item_name": metadata['subject'], "raw_analysis": text, "confidence": "Low"}
+
+                        except Exception as gen_err:
+                            logger.error(f"Gemini Analysis Failed for {msg_id}: {gen_err}")
+                            extracted_data = {"item_name": metadata['subject'], "raw_analysis": "Error analyzing", "confidence": "Low"}
                         
                         shard_data = {
                             "id": shard_id,
