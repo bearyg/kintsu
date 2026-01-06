@@ -214,6 +214,9 @@ function App() {
   const handleScanGmail = async () => {
     setIsScanningGmail(true);
     try {
+      // Incremental Auth: Request Gmail scope only now
+      await DriveService.requestGmailAccess();
+
       const urlParams = new URLSearchParams(window.location.search);
       const isDebug = urlParams.get('debug') === 'on';
 

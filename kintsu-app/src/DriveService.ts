@@ -7,11 +7,13 @@ declare global {
 }
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.readonly';
+const BASE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
 
 export class DriveService {
   static tokenClient: any;
   static accessToken: string | null = null;
+  static grantedScopes: Set<string> = new Set();
 
   // Initialize GAPI client (for requests) and GIS (for auth)
   static async init(clientId: string, apiKey: string) {
@@ -29,10 +31,14 @@ export class DriveService {
           if (window.google) {
             this.tokenClient = window.google.accounts.oauth2.initTokenClient({
               client_id: clientId,
-              scope: SCOPES,
+              scope: BASE_SCOPES,
               callback: (tokenResponse: any) => {
                 if (tokenResponse && tokenResponse.access_token) {
                   this.accessToken = tokenResponse.access_token;
+                  // Track scopes granted (simple heuristic)
+                  if (tokenResponse.scope) {
+                      tokenResponse.scope.split(' ').forEach((s: string) => this.grantedScopes.add(s));
+                  }
                   // Set token for GAPI calls
                   gapi.client.setToken(tokenResponse); 
                 }
@@ -59,15 +65,50 @@ export class DriveService {
           reject(resp);
         } else {
           this.accessToken = resp.access_token;
+          if (resp.scope) {
+             resp.scope.split(' ').forEach((s: string) => this.grantedScopes.add(s));
+          }
           // IMPORTANT: Set the token for future GAPI requests
           gapi.client.setToken(resp);
           resolve();
         }
       };
 
-      // Request token (triggers popup)
-      this.tokenClient.requestAccessToken({ prompt: 'consent' });
+      // Request token (triggers popup) with base scopes
+      this.tokenClient.requestAccessToken({ prompt: 'consent', scope: BASE_SCOPES });
     });
+  }
+
+  static async requestGmailAccess(): Promise<void> {
+      return new Promise((resolve, reject) => {
+        if (!this.tokenClient) return reject("Token Client not initialized");
+
+        // Check if we already have it (heuristic)
+        if (this.grantedScopes.has(GMAIL_SCOPES) || this.grantedScopes.has('https://www.googleapis.com/auth/gmail.readonly')) {
+            resolve();
+            return;
+        }
+
+        this.tokenClient.callback = (resp: any) => {
+            if (resp.error) {
+                reject(resp);
+            } else {
+                this.accessToken = resp.access_token;
+                if (resp.scope) {
+                    resp.scope.split(' ').forEach((s: string) => this.grantedScopes.add(s));
+                }
+                gapi.client.setToken(resp);
+                resolve();
+            }
+        };
+
+        // Request combined scopes (Incremental auth requires requesting ALL needed scopes, not just new ones, usually)
+        // GIS is smart, but best practice is to include accumulated scopes or just the new one if we want to "add" it.
+        // Actually, requesting just the new one returns a token valid for the new one. 
+        // If we want a token valid for BOTH, we must request BOTH.
+        const combinedScopes = `${BASE_SCOPES} ${GMAIL_SCOPES}`;
+        this.tokenClient.requestAccessToken({ prompt: 'consent', scope: combinedScopes });
+      });
   }
 
   static async signOut() {
