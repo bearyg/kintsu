@@ -7,7 +7,7 @@ declare global {
 }
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const BASE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const BASE_SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
 
 export class DriveService {

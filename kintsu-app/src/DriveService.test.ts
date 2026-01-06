@@ -43,7 +43,7 @@ describe('DriveService', () => {
     // This assertion should pass (existing functionality)
     expect(mockInitTokenClient).toHaveBeenCalledWith(expect.objectContaining({
       client_id: 'test-client-id',
-      scope: expect.stringContaining('https://www.googleapis.com/auth/drive.file'),
+      scope: expect.stringContaining('https://www.googleapis.com/auth/drive.appdata'),
     }));
 
     // This assertion should FAIL (new requirement)
