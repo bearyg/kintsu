@@ -1,5 +1,5 @@
-functions-framework
-google-cloud-firestore
-google-api-python-client
-google-auth
-google-generativeai
+functions-framework>=3.0.0
+google-cloud-firestore>=2.11.0
+google-api-python-client>=2.100.0
+google-auth>=2.20.0
+google-generativeai>=0.3.0

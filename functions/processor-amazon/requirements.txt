@@ -1,5 +1,5 @@
-functions-framework
-google-cloud-firestore
-google-cloud-storage
-pandas
-requests
+functions-framework>=3.0.0
+google-cloud-firestore>=2.11.0
+google-cloud-storage>=2.10.0
+pandas>=2.0.0
+requests>=2.31.0
