@@ -1,14 +1,21 @@
 steps:
+  # --- Backend Build Stream ---
   # 1. Build Backend Image
   - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-backend'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest', './backend']
+    waitFor: ['-']
   
   # 2. Push Backend Image
   - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-backend'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest']
+    waitFor: ['build-backend']
 
+  # --- Function Deployment Stream (Parallel) ---
   # 3. Deploy Amazon Processor Function
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-amazon'
     entrypoint: 'bash'
     args:
     - '-c'
@@ -22,9 +29,11 @@ steps:
         --trigger-http \
         --allow-unauthenticated \
         --memory=512Mi
+    waitFor: ['-']
 
   # 4. Deploy Gmail Ingest Function
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-gmail'
     entrypoint: 'bash'
     args:
     - '-c'
@@ -39,9 +48,12 @@ steps:
         --allow-unauthenticated \
         --memory=512Mi \
         --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+    waitFor: ['-']
 
+  # --- Orchestrator Deployment (Wait for Backend Image + Functions) ---
   # 5. Deploy Backend (Orchestrator) with Function URLs
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-backend'
     entrypoint: 'bash'
     args:
     - '-c'
@@ -62,30 +74,39 @@ steps:
         --timeout 300s \
         --set-env-vars ENVIRONMENT=production,AMAZON_PROCESSOR_URL=$$AMAZON_URL,GMAIL_INGEST_URL=$$GMAIL_URL \
         --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest
+    waitFor: ['push-backend', 'deploy-amazon', 'deploy-gmail']
 
+  # --- Frontend Stream (Parallel) ---
   # 6. Install Frontend Dependencies
   - name: 'node:18'
+    id: 'install-frontend'
     dir: 'kintsu-app'
     entrypoint: npm
     args: ['install']
+    waitFor: ['-']
 
   # 7. Create Env File
   - name: 'bash'
+    id: 'env-frontend'
     dir: 'kintsu-app'
     entrypoint: 'bash'
     args:
       - '-c'
       - 'echo "VITE_GOOGLE_API_KEY=$$FRONTEND_KEY" > .env'
     secretEnv: ['FRONTEND_KEY']
+    waitFor: ['-']
 
   # 8. Build Frontend
   - name: 'node:18'
+    id: 'build-frontend'
     dir: 'kintsu-app'
     entrypoint: npm
     args: ['run', 'build']
+    waitFor: ['install-frontend', 'env-frontend']
 
   # 9. Deploy Frontend to Firebase
   - name: 'node:18'
+    id: 'deploy-frontend'
     dir: 'kintsu-app'
     entrypoint: 'bash'
     args:
@@ -93,6 +114,7 @@ steps:
       - |
         npm install -g firebase-tools
         firebase deploy --only hosting --project $PROJECT_ID --non-interactive
+    waitFor: ['build-frontend']
 
 availableSecrets:
   secretManager:
