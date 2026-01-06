@@ -78,7 +78,7 @@ steps:
 
   # --- Frontend Stream (Parallel) ---
   # 6. Install Frontend Dependencies
-  - name: 'node:18'
+  - name: 'node:22'
     id: 'install-frontend'
     dir: 'kintsu-app'
     entrypoint: npm
@@ -97,7 +97,7 @@ steps:
     waitFor: ['-']
 
   # 8. Build Frontend
-  - name: 'node:18'
+  - name: 'node:22'
     id: 'build-frontend'
     dir: 'kintsu-app'
     entrypoint: npm
@@ -105,7 +105,7 @@ steps:
     waitFor: ['install-frontend', 'env-frontend']
 
   # 9. Deploy Frontend to Firebase
-  - name: 'node:18'
+  - name: 'node:22'
     id: 'deploy-frontend'
     dir: 'kintsu-app'
     entrypoint: 'bash'
