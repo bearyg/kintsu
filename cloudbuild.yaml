@@ -7,36 +7,69 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest']
 
-  # 3. Deploy Backend to Cloud Run
+  # 3. Deploy Amazon Processor Function
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    entrypoint: 'bash'
     args:
-      - 'run'
-      - 'deploy'
-      - 'kintsu-backend'
-      - '--image'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest'
-      - '--region'
-      - 'us-central1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--memory'
-      - '1024Mi'
-      - '--timeout'
-      - '300s'
-      - '--set-env-vars'
-      - 'ENVIRONMENT=production'
-      - '--set-secrets'
-      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest'
+    - '-c'
+    - |
+      gcloud functions deploy kintsu-processor-amazon \
+        --gen2 \
+        --runtime=python311 \
+        --region=us-central1 \
+        --source=./functions/processor-amazon \
+        --entry-point=process_amazon \
+        --trigger-http \
+        --allow-unauthenticated \
+        --memory=512Mi
 
-  # 4. Install Frontend Dependencies
+  # 4. Deploy Gmail Ingest Function
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |
+      gcloud functions deploy kintsu-ingest-gmail \
+        --gen2 \
+        --runtime=python311 \
+        --region=us-central1 \
+        --source=./functions/ingest-gmail \
+        --entry-point=ingest_gmail \
+        --trigger-http \
+        --allow-unauthenticated \
+        --memory=512Mi \
+        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+
+  # 5. Deploy Backend (Orchestrator) with Function URLs
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |
+      echo "Fetching Function URLs..."
+      AMAZON_URL=$(gcloud functions describe kintsu-processor-amazon --gen2 --region=us-central1 --format='value(serviceConfig.uri)')
+      GMAIL_URL=$(gcloud functions describe kintsu-ingest-gmail --gen2 --region=us-central1 --format='value(serviceConfig.uri)')
+      
+      echo "Amazon Processor URL: $AMAZON_URL"
+      echo "Gmail Ingest URL: $GMAIL_URL"
+      
+      gcloud run deploy kintsu-backend \
+        --image us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest \
+        --region us-central1 \
+        --platform managed \
+        --allow-unauthenticated \
+        --memory 1024Mi \
+        --timeout 300s \
+        --set-env-vars ENVIRONMENT=production,AMAZON_PROCESSOR_URL=$AMAZON_URL,GMAIL_INGEST_URL=$GMAIL_URL \
+        --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest
+
+  # 6. Install Frontend Dependencies
   - name: 'node:18'
     dir: 'kintsu-app'
     entrypoint: npm
     args: ['install']
 
-  # 5. Create Env File
+  # 7. Create Env File
   - name: 'bash'
     dir: 'kintsu-app'
     entrypoint: 'bash'
@@ -45,13 +78,13 @@ steps:
       - 'echo "VITE_GOOGLE_API_KEY=$$FRONTEND_KEY" > .env'
     secretEnv: ['FRONTEND_KEY']
 
-  # 6. Build Frontend
+  # 8. Build Frontend
   - name: 'node:18'
     dir: 'kintsu-app'
     entrypoint: npm
     args: ['run', 'build']
 
-  # 7. Deploy Frontend to Firebase
+  # 9. Deploy Frontend to Firebase
   - name: 'node:18'
     dir: 'kintsu-app'
     entrypoint: 'bash'

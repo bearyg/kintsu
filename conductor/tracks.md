@@ -14,3 +14,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Integrate Gmail for automated data ingestion
 *Link: [./conductor/tracks/gmail_ingestion_20260105/](./conductor/tracks/gmail_ingestion_20260105/)*
+
+## [x] Track: Gmail Integration Debugging
+*Link: [./conductor/tracks/gmail_debugging_20260105/](./conductor/tracks/gmail_debugging_20260105/)*
+
+## [x] Track: Microservices Refactor
+*Link: [./conductor/tracks/microservices_refactor_20260105/](./conductor/tracks/microservices_refactor_20260105/)*

@@ -222,7 +222,8 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           access_token: DriveService.accessToken,
-          debug_mode: isDebug
+          debug_mode: isDebug,
+          trace_id: `trace_${Date.now()}`
         })
       });
       alert("Gmail scan initiated!");

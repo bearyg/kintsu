@@ -6,5 +6,3 @@ google-cloud-firestore
 google-generativeai
 python-multipart
 requests
-pandas
-google-api-python-client
