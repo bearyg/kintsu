@@ -50,8 +50,8 @@ steps:
       AMAZON_URL=$(gcloud functions describe kintsu-processor-amazon --gen2 --region=us-central1 --format='value(serviceConfig.uri)')
       GMAIL_URL=$(gcloud functions describe kintsu-ingest-gmail --gen2 --region=us-central1 --format='value(serviceConfig.uri)')
       
-      echo "Amazon Processor URL: $AMAZON_URL"
-      echo "Gmail Ingest URL: $GMAIL_URL"
+      echo "Amazon Processor URL: $$AMAZON_URL"
+      echo "Gmail Ingest URL: $$GMAIL_URL"
       
       gcloud run deploy kintsu-backend \
         --image us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest \
@@ -60,7 +60,7 @@ steps:
         --allow-unauthenticated \
         --memory 1024Mi \
         --timeout 300s \
-        --set-env-vars ENVIRONMENT=production,AMAZON_PROCESSOR_URL=$AMAZON_URL,GMAIL_INGEST_URL=$GMAIL_URL \
+        --set-env-vars ENVIRONMENT=production,AMAZON_PROCESSOR_URL=$$AMAZON_URL,GMAIL_INGEST_URL=$$GMAIL_URL \
         --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest
 
   # 6. Install Frontend Dependencies
