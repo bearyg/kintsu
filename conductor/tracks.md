@@ -20,3 +20,4 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Microservices Refactor
 *Link: [./conductor/tracks/microservices_refactor_20260105/](./conductor/tracks/microservices_refactor_20260105/)*
+\n---\n\n## [ ] Track: Refactor data pipeline to enforce BYOS and Zero-Retention policy by storing extracted data in Google Drive instead of Firestore.\n*Link: [./conductor/tracks/byos_refactor_20260106/](./conductor/tracks/byos_refactor_20260106/)*
