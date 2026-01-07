@@ -1,6 +1,6 @@
 # Plan: True BYOS & Zero-Retention Refactor
 
-## Phase 1: Storage Adapter & Artifact Generation (Backend)
+## Phase 1: Storage Adapter & Artifact Generation (Backend) [checkpoint: 8fce228]
 - [x] Task: Create `DriveStorageAdapter` class in `backend/` and Cloud Functions to handle writing `.kintsu.json` sidecars to Drive.
 - [x] Task: Implement `InventoryAggregator` logic to append extracted data to a master `Kintsu_Inventory.xlsx` in the user's Drive root.
     - [x] Sub-task: Handle locking/concurrency (or simple append-only strategy) for the master file.
