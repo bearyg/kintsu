@@ -1,5 +1,17 @@
 {
   "projects": {
     "default": "kintsu-gcp"
+  },
+  "targets": {
+    "kintsu-gcp": {
+      "hosting": {
+        "prod": [
+          "kintsu-gcp"
+        ],
+        "dev": [
+          "kintsu-gcp-dev"
+        ]
+      }
+    }
   }
 }
