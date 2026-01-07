@@ -3,13 +3,13 @@ steps:
   # 1. Build Backend Image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-backend'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest', './backend']
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend${_SUFFIX}:latest', './backend']
     waitFor: ['-']
   
   # 2. Push Backend Image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-backend'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend${_SUFFIX}:latest']
     waitFor: ['build-backend']
 
   # --- Function Deployment Stream (Parallel) ---
@@ -20,7 +20,7 @@ steps:
     args:
     - '-c'
     - |
-      gcloud functions deploy kintsu-processor-amazon \
+      gcloud functions deploy kintsu-processor-amazon${_SUFFIX} \
         --gen2 \
         --runtime=python311 \
         --region=us-central1 \
@@ -38,7 +38,7 @@ steps:
     args:
     - '-c'
     - |
-      gcloud functions deploy kintsu-ingest-gmail \
+      gcloud functions deploy kintsu-ingest-gmail${_SUFFIX} \
         --gen2 \
         --runtime=python311 \
         --region=us-central1 \
@@ -50,8 +50,27 @@ steps:
         --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
     waitFor: ['-']
 
+  # 5. Deploy Ingest Shard Function (New)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-shard'
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |
+      gcloud functions deploy kintsu-ingest-shard${_SUFFIX} \
+        --gen2 \
+        --runtime=python311 \
+        --region=us-central1 \
+        --source=./functions/ingest-shard \
+        --entry-point=process_new_shard \
+        --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
+        --trigger-event-filters="bucket=kintsu-hopper-kintsu-gcp" \
+        --memory=1024Mi \
+        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+    waitFor: ['-']
+
   # --- Orchestrator Deployment (Wait for Backend Image + Functions) ---
-  # 5. Deploy Backend (Orchestrator) with Function URLs
+  # 6. Deploy Backend (Orchestrator) with Function URLs
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-backend'
     entrypoint: 'bash'
@@ -59,14 +78,14 @@ steps:
     - '-c'
     - |
       echo "Fetching Function URLs..."
-      AMAZON_URL=$(gcloud functions describe kintsu-processor-amazon --gen2 --region=us-central1 --format='value(serviceConfig.uri)')
-      GMAIL_URL=$(gcloud functions describe kintsu-ingest-gmail --gen2 --region=us-central1 --format='value(serviceConfig.uri)')
+      AMAZON_URL=$(gcloud functions describe kintsu-processor-amazon${_SUFFIX} --gen2 --region=us-central1 --format='value(serviceConfig.uri)')
+      GMAIL_URL=$(gcloud functions describe kintsu-ingest-gmail${_SUFFIX} --gen2 --region=us-central1 --format='value(serviceConfig.uri)')
       
       echo "Amazon Processor URL: $$AMAZON_URL"
       echo "Gmail Ingest URL: $$GMAIL_URL"
       
-      gcloud run deploy kintsu-backend \
-        --image us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend:latest \
+      gcloud run deploy kintsu-backend${_SUFFIX} \
+        --image us-central1-docker.pkg.dev/$PROJECT_ID/kintsu-repo/kintsu-backend${_SUFFIX}:latest \
         --region us-central1 \
         --platform managed \
         --allow-unauthenticated \
@@ -74,10 +93,10 @@ steps:
         --timeout 300s \
         --set-env-vars ENVIRONMENT=production,AMAZON_PROCESSOR_URL=$$AMAZON_URL,GMAIL_INGEST_URL=$$GMAIL_URL \
         --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest
-    waitFor: ['push-backend', 'deploy-amazon', 'deploy-gmail']
+    waitFor: ['push-backend', 'deploy-amazon', 'deploy-gmail', 'deploy-shard']
 
   # --- Frontend Stream (Parallel) ---
-  # 6. Install Frontend Dependencies
+  # 7. Install Frontend Dependencies
   - name: 'node:22'
     id: 'install-frontend'
     dir: 'kintsu-app'
@@ -85,7 +104,7 @@ steps:
     args: ['install']
     waitFor: ['-']
 
-  # 7. Create Env File
+  # 8. Create Env File
   - name: 'bash'
     id: 'env-frontend'
     dir: 'kintsu-app'
@@ -96,7 +115,7 @@ steps:
     secretEnv: ['FRONTEND_KEY']
     waitFor: ['-']
 
-  # 8. Build Frontend
+  # 9. Build Frontend
   - name: 'node:22'
     id: 'build-frontend'
     dir: 'kintsu-app'
@@ -104,7 +123,7 @@ steps:
     args: ['run', 'build']
     waitFor: ['install-frontend', 'env-frontend']
 
-  # 9. Deploy Frontend to Firebase
+  # 10. Deploy Frontend to Firebase (Channel aware)
   - name: 'node:22'
     id: 'deploy-frontend'
     dir: 'kintsu-app'
@@ -113,7 +132,13 @@ steps:
       - '-c'
       - |
         npm install -g firebase-tools
-        firebase deploy --only hosting --project $PROJECT_ID --non-interactive
+        if [ -z "${_SUFFIX}" ]; then
+          echo "Deploying to Production..."
+          firebase deploy --only hosting --project $PROJECT_ID --non-interactive
+        else
+          echo "Deploying to Channel: dev..."
+          firebase hosting:channel:deploy dev --project $PROJECT_ID --non-interactive
+        fi
     waitFor: ['build-frontend']
 
 availableSecrets:
@@ -123,3 +148,6 @@ availableSecrets:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _SUFFIX: '-dev' # Default to dev for safety. Main trigger should override to ''
