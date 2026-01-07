@@ -8,6 +8,15 @@ import io
 import tempfile
 import time
 
+# Import BYOS modules
+try:
+    from storage_adapter import DriveStorageAdapter
+    from aggregator import InventoryAggregator
+except ImportError as e:
+    print(f"BYOS Import Error: {e}")
+    # Fallback or allow failure if modules missing in some envs
+    pass
+
 # Initialize clients
 storage_client = storage.Client()
 db = firestore.Client()
@@ -95,9 +104,6 @@ def extract_data_with_gemini(blob, mime_type):
             contents=[prompt, gemini_file]
         )
         
-        # Cleanup Gemini file (New API usually keeps files for 48h, but good to clean if ephemeral)
-        # client.files.delete(name=gemini_file.name) # Optional based on policy
-        
         # Parse JSON response
         text = response.text.replace('```json', '').replace('```', '').strip()
         match = None
@@ -173,12 +179,51 @@ def process_new_shard(cloud_event):
         extracted_data = extract_data_with_gemini(blob, blob.content_type)
         
         if extracted_data:
-            db.collection("shards").document(shard_id).update({
-                "status": "refined",
-                "extractedData": extracted_data,
-                "refinedAt": firestore.SERVER_TIMESTAMP
-            })
-            print(f"Shard {shard_id} successfully refined.")
+            # BYOS Implementation
+            try:
+                drive_adapter = DriveStorageAdapter()
+                
+                # Find or Create 'Kintsu' folder in Drive Root
+                kintsu_folder = drive_adapter.find_file_by_name("Kintsu", "root")
+                if not kintsu_folder:
+                    print("Creating Kintsu folder in Drive...")
+                    kintsu_folder = drive_adapter.create_file("Kintsu", "root", "", "application/vnd.google-apps.folder")
+                
+                kintsu_folder_id = kintsu_folder['id']
+
+                # 1. Write Sidecar (.kintsu.json)
+                sidecar_name = f"{os.path.basename(file_name)}.kintsu.json"
+                sidecar_content = json.dumps(extracted_data, indent=2)
+                
+                # Check if exists to update or create? For now assume create (overwrite usually requires update in Drive)
+                # Helper to check?
+                existing_sidecar = drive_adapter.find_file_by_name(sidecar_name, kintsu_folder_id)
+                if existing_sidecar:
+                    new_file = drive_adapter.update_file(existing_sidecar['id'], sidecar_content)
+                else:
+                    new_file = drive_adapter.create_file(sidecar_name, kintsu_folder_id, sidecar_content)
+                
+                print(f"Sidecar created/updated: {new_file.get('id')}")
+
+                # 2. Append to Master Inventory
+                aggregator = InventoryAggregator(drive_adapter)
+                aggregator.append_item(kintsu_folder_id, extracted_data, os.path.basename(file_name))
+
+                # 3. Update Firestore (Status Only)
+                db.collection("shards").document(shard_id).update({
+                    "status": "refined",
+                    "driveFileId": new_file.get('id'),
+                    "refinedAt": firestore.SERVER_TIMESTAMP
+                })
+                print(f"Shard {shard_id} refined (BYOS Mode).")
+
+            except Exception as e:
+                print(f"BYOS/Drive Error: {e}")
+                db.collection("shards").document(shard_id).update({
+                    "status": "error",
+                    "errorMsg": f"BYOS Error: {str(e)}"
+                })
+
         else:
              db.collection("shards").document(shard_id).update({
                 "status": "error",
