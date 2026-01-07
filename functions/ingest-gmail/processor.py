@@ -109,3 +109,35 @@ class GmailProcessor:
                 body_text = base64.urlsafe_b64decode(data).decode('utf-8')
                 
         return body_text
+
+    def get_raw_html(self, message: Dict[str, Any]) -> str:
+        """
+        Extracts the HTML body of the email.
+        """
+        payload = message.get('payload', {})
+        
+        def find_html_part(parts):
+            for part in parts:
+                mime_type = part.get('mimeType')
+                if mime_type == 'text/html':
+                    data = part['body'].get('data')
+                    if data:
+                        return base64.urlsafe_b64decode(data).decode('utf-8')
+                elif 'parts' in part:
+                    html = find_html_part(part['parts'])
+                    if html:
+                        return html
+            return None
+
+        if 'parts' in payload:
+            html = find_html_part(payload['parts'])
+            if html:
+                return html
+        
+        # Fallback if only one part and it's HTML
+        if payload.get('mimeType') == 'text/html':
+            data = payload.get('body', {}).get('data')
+            if data:
+                return base64.urlsafe_b64decode(data).decode('utf-8')
+                
+        return ""

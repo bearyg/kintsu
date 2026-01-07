@@ -3,3 +3,4 @@ google-cloud-firestore>=2.11.0
 google-api-python-client>=2.100.0
 google-auth>=2.20.0
 google-genai
+google-cloud-storage>=2.10.0

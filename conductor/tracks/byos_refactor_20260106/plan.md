@@ -11,8 +11,8 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Backend Storage' (Protocol in workflow.md)
 
 ## Phase 2: Gmail Synthetic Artifacts
-- [ ] Task: Update `ingest-gmail` to render email body as HTML/PDF.
-- [ ] Task: Modify `ingest-gmail` to upload this artifact to `Hopper/Gmail/` instead of triggering Gemini directly.
+- [x] Task: Update `ingest-gmail` to render email body as HTML/PDF.
+- [x] Task: Modify `ingest-gmail` to upload this artifact to `Hopper/Gmail/` instead of triggering Gemini directly.
     - *Note:* The upload to `Hopper/` should naturally trigger the `ingest-shard` GCS trigger, standardizing the flow.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Gmail Artifacts' (Protocol in workflow.md)
 
