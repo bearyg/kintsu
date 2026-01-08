@@ -1,6 +1,6 @@
 # Plan: Research Spike - Google Takeout Feasibility
 
-## Phase 1: API & Automation Research
+## Phase 1: API & Automation Research [checkpoint: 75064d9]
 - [x] Task: Investigate official Google Data Portability & Takeout APIs.
     - [x] Sub-task: Research the "Google Data Portability API" (specifically `portability.google.com`) for direct programmatic access to exports.
     - [x] Sub-task: Check Google Cloud documentation for "Data Transfer Project" integration and service-to-service transfer capabilities.
