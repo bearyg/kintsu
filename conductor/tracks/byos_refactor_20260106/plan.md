@@ -17,14 +17,15 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Gmail Artifacts' (Protocol in workflow.md)
 
 ## Phase 3: Frontend Data Fetching Refactor
-- [ ] Task: Update `DriveService.ts` to add methods for reading `.kintsu.json` sidecar files given a file ID.
-- [ ] Task: Refactor `App.tsx` and data hooks:
+- [x] Task: Update `DriveService.ts` to add methods for reading `.kintsu.json` sidecar files given a file ID.
+- [x] Task: Refactor `App.tsx` and data hooks:
     - Listen to Firestore for *list* of items and status.
     - When an item is "Refined", asynchronously fetch its content from Drive (lazy load).
-- [ ] Task: Remove all code relying on `shard.extractedData` from Firestore.
+- [x] Task: Remove all code relying on `shard.extractedData` from Firestore.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Frontend Refactor' (Protocol in workflow.md)
 
 ## Phase 4: Cleanup & Migration
-- [ ] Task: Write a script (or Cloud Function) to retroactive "purge" extracted data from existing Firestore documents (if any exist in prod).
-- [ ] Task: Final end-to-end verification of the privacy promise (data in Drive, nothing in Firestore).
+- [x] Task: Write a script (or Cloud Function) to retroactive "purge" extracted data from existing Firestore documents (if any exist in prod).
+- [x] Task: Final end-to-end verification of the privacy promise (data in Drive, nothing in Firestore).
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Final Validation' (Protocol in workflow.md)
+

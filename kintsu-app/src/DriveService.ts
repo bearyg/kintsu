@@ -9,7 +9,8 @@ declare global {
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
 const SCOPES = {
-  DRIVE: 'https://www.googleapis.com/auth/drive.file'
+  DRIVE: 'https://www.googleapis.com/auth/drive.file',
+  IDENTITY: 'openid email profile'
 };
 
 export class DriveService {
@@ -33,7 +34,7 @@ export class DriveService {
           if (window.google) {
             this.tokenClient = window.google.accounts.oauth2.initTokenClient({
               client_id: clientId,
-              scope: SCOPES.DRIVE, // STRICTLY Drive scope only for init
+              scope: `${SCOPES.DRIVE} ${SCOPES.IDENTITY}`, // Include Identity Scopes
               callback: (tokenResponse: any) => {
                 if (tokenResponse && tokenResponse.access_token) {
                   this.accessToken = tokenResponse.access_token;
@@ -76,8 +77,8 @@ export class DriveService {
         }
       };
 
-      // Request token (triggers popup) with base scopes ONLY
-      this.tokenClient.requestAccessToken({ prompt: 'consent', scope: SCOPES.DRIVE });
+      // Request token (triggers popup) with base scopes
+      this.tokenClient.requestAccessToken({ prompt: 'consent', scope: `${SCOPES.DRIVE} ${SCOPES.IDENTITY}` });
     });
   }
 
