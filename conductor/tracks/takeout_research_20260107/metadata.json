@@ -1,0 +1,8 @@
+{
+  "track_id": "takeout_research_20260107",
+  "type": "research",
+  "status": "new",
+  "created_at": "2026-01-07T22:15:00Z",
+  "updated_at": "2026-01-07T22:15:00Z",
+  "description": "Research feasibility of using Google Takeout as an alternative to Gmail OAuth (gmail.readonly scope) to avoid CASA Tier 2 verification."
+}
