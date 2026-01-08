@@ -9,7 +9,9 @@ import { TakeoutWizard } from './components/TakeoutWizard';
 
 // --- Configuration ---
 const CLIENT_ID = "351476623210-j0s46m1ermc27qlret2rdn1iqg6re013.apps.googleusercontent.com";
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+// FORCE HARDCODED KEY FOR DEBUGGING 502 ERROR
+const API_KEY = "AIzaSyAQReDH4oXNrwITcXbSz7eFwfxA46u7YJE"; 
+// const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
 // --- Types ---
 interface UserInfo {
