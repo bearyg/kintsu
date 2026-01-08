@@ -26,7 +26,7 @@ interface Shard {
   fileName: string;
   sourceType: string;
   status: 'unprocessed' | 'refined' | 'error';
-  extractedData?: ExtractedData;
+  driveFileId?: string;
   createdAt: Timestamp;
 }
 
@@ -36,6 +36,96 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 // --- Components ---
+
+const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: string) => any }) => {
+  const [data, setData] = useState<ExtractedData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const Icon = getIcon(shard.sourceType);
+  const isRefined = shard.status === 'refined';
+
+  useEffect(() => {
+    if (isRefined && shard.driveFileId && !data) {
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const content = await DriveService.getFileContent(shard.driveFileId!);
+          setData(JSON.parse(content));
+        } catch (e) {
+          console.error("Error loading sidecar:", e);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }
+  }, [isRefined, shard.driveFileId, data]);
+
+  return (
+    <div 
+      className={cn(
+          "relative overflow-hidden rounded-xl border transition-all p-5 flex gap-5 group bg-white",
+          isRefined 
+            ? "border-[#D4AF37]/30 shadow-md shadow-orange-100" 
+            : "border-slate-200 opacity-80"
+      )}
+    >
+        <div className={cn(
+            "absolute left-0 top-0 bottom-0 w-1.5",
+            isRefined ? "bg-[#D4AF37]" : "bg-slate-300"
+        )} />
+
+        <div className={cn(
+            "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
+            isRefined ? "bg-orange-50 text-[#D4AF37]" : "bg-slate-100 text-slate-400"
+        )}>
+            <Icon className="w-6 h-6" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start mb-2">
+                <h4 className={cn("font-bold truncate pr-4", isRefined ? "text-slate-900" : "text-slate-500")}>
+                    {shard.fileName}
+                </h4>
+                <span className="text-xs font-mono text-slate-400 shrink-0">
+                    {shard.createdAt?.toDate().toLocaleTimeString()}
+                </span>
+            </div>
+
+            {isRefined ? (
+                loading ? (
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Loading from Drive...</span>
+                    </div>
+                ) : data ? (
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm mt-1">
+                        <div className="flex items-center gap-2">
+                            <span className="text-slate-400 text-xs uppercase font-bold">Item</span>
+                            <span className="font-medium text-[#0F172A]">{data.item_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-slate-400 text-xs uppercase font-bold">Value</span>
+                            <span className="font-bold text-[#D4AF37]">
+                                {data.currency} {data.total_amount}
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Waiting for record...</span>
+                    </div>
+                )
+            ) : (
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Gemini is analyzing...</span>
+                </div>
+            )}
+        </div>
+    </div>
+  );
+};
 
 const PhaseBadge = ({ step, label, current }: { step: number, label: string, current: number }) => {
   const isActive = step === current;
@@ -486,65 +576,9 @@ function App() {
             </div>
 
             <div className="grid gap-4">
-                {shards.map((shard) => {
-                    const Icon = getIcon(shard.sourceType);
-                    const isRefined = shard.status === 'refined';
-                    
-                    return (
-                        <div 
-                          key={shard.id} 
-                          className={cn(
-                              "relative overflow-hidden rounded-xl border transition-all p-5 flex gap-5 group bg-white",
-                              isRefined 
-                                ? "border-[#D4AF37]/30 shadow-md shadow-orange-100" 
-                                : "border-slate-200 opacity-80"
-                          )}
-                        >
-                            <div className={cn(
-                                "absolute left-0 top-0 bottom-0 w-1.5",
-                                isRefined ? "bg-[#D4AF37]" : "bg-slate-300"
-                            )} />
-
-                            <div className={cn(
-                                "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
-                                isRefined ? "bg-orange-50 text-[#D4AF37]" : "bg-slate-100 text-slate-400"
-                            )}>
-                                <Icon className="w-6 h-6" />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h4 className={cn("font-bold truncate pr-4", isRefined ? "text-slate-900" : "text-slate-500")}>
-                                        {shard.fileName}
-                                    </h4>
-                                    <span className="text-xs font-mono text-slate-400 shrink-0">
-                                        {shard.createdAt?.toDate().toLocaleTimeString()}
-                                    </span>
-                                </div>
-
-                                {isRefined && shard.extractedData ? (
-                                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm mt-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-slate-400 text-xs uppercase font-bold">Item</span>
-                                            <span className="font-medium text-[#0F172A]">{shard.extractedData.item_name}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-slate-400 text-xs uppercase font-bold">Value</span>
-                                            <span className="font-bold text-[#D4AF37]">
-                                                {shard.extractedData.currency} {shard.extractedData.total_amount}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                        <span>Gemini is analyzing...</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
+                {shards.map((shard) => (
+                    <RefinedShardItem key={shard.id} shard={shard} getIcon={getIcon} />
+                ))}
             </div>
         </div>
 

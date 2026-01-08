@@ -4,8 +4,13 @@ import tempfile
 import zipfile
 import shutil
 import requests
+import json
 import logging
+import io
 from google.cloud import firestore
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
 from processor import AmazonProcessor
 
 # Configure Logging
@@ -14,13 +19,51 @@ logger = logging.getLogger(__name__)
 
 db = firestore.Client()
 
+def get_drive_service(access_token):
+    creds = Credentials(access_token)
+    return build('drive', 'v3', credentials=creds)
+
+def find_or_create_folder(service, name, parent_id='root'):
+    query = f"name = '{name}' and '{parent_id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+    results = service.files().list(q=query, fields='files(id, name)').execute()
+    files = results.get('files', [])
+    if files:
+        return files[0]['id']
+    
+    file_metadata = {
+        'name': name,
+        'mimeType': 'application/vnd.google-apps.folder',
+        'parents': [parent_id]
+    }
+    file = service.files().create(body=file_metadata, fields='id').execute()
+    return file.get('id')
+
+def write_sidecar(service, parent_id, name, content):
+    file_metadata = {
+        'name': name,
+        'parents': [parent_id],
+        'mimeType': 'application/json'
+    }
+    media = MediaIoBaseUpload(io.BytesIO(json.dumps(content, indent=2).encode('utf-8')), mimetype='application/json')
+    
+    # Check if exists
+    query = f"name = '{name}' and '{parent_id}' in parents and trashed = false"
+    results = service.files().list(q=query, fields='files(id, name)').execute()
+    files = results.get('files', [])
+    
+    if files:
+        file = service.files().update(fileId=files[0]['id'], media_body=media, fields='id').execute()
+    else:
+        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    return file.get('id')
+
 def save_shard(shard_data: dict, shard_id: str):
     db.collection("shards").document(shard_id).set(shard_data)
     logger.info(f"Saved shard: {shard_id}")
 
 @functions_framework.http
 def process_amazon(request):
-    """HTTP Cloud Function to process Amazon data files."""
+    """HTTP Cloud Function to process Amazon data files (BYOS Mode)."""
     try:
         req_json = request.get_json(silent=True)
         if not req_json:
@@ -36,6 +79,10 @@ def process_amazon(request):
              return {"error": "Missing required fields"}, 400
 
         logger.info(f"Starting Amazon processing for: {file_name} (Debug: {debug_mode})")
+        drive_service = get_drive_service(access_token)
+        
+        # Ensure Kintsu folder exists
+        kintsu_id = find_or_create_folder(drive_service, "Kintsu")
 
         work_dir = tempfile.mkdtemp()
         try:
@@ -84,13 +131,18 @@ def process_amazon(request):
                     
                     for i, shard_data in enumerate(shards):
                         shard_id = f"amazon_{file_id}_{i}"
+                        
+                        # BYOS: Write sidecar to Drive
+                        sidecar_name = f"{current_file_name}_item_{i+1}.kintsu.json"
+                        drive_sidecar_id = write_sidecar(drive_service, kintsu_id, sidecar_name, shard_data)
+
                         final_shard = {
                             "id": shard_id,
                             "fileName": f"{current_file_name} (Item {i+1})",
                             "sourceType": "Amazon",
                             "parentZip": file_name,
                             "status": "refined",
-                            "extractedData": shard_data,
+                            "driveFileId": drive_sidecar_id,
                             "createdAt": firestore.SERVER_TIMESTAMP
                         }
                         save_shard(final_shard, shard_id)
@@ -119,3 +171,4 @@ def process_amazon(request):
     except Exception as e:
         logger.error(f"Function Error: {e}", exc_info=True)
         return {"error": str(e)}, 500
+

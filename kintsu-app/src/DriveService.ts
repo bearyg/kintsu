@@ -98,8 +98,15 @@ export class DriveService {
   // --- Folder Management ---
 
   static async findFolder(name: string, parentId: string = 'root'): Promise<string | null> {
+    return this.findFile(name, parentId, 'application/vnd.google-apps.folder');
+  }
+
+  static async findFile(name: string, parentId: string = 'root', mimeType?: string): Promise<string | null> {
     try {
-      const query = `mimeType='application/vnd.google-apps.folder' and name='${name}' and '${parentId}' in parents and trashed=false`;
+      let query = `name='${name}' and '${parentId}' in parents and trashed=false`;
+      if (mimeType) {
+        query += ` and mimeType='${mimeType}'`;
+      }
       const response = await gapi.client.drive.files.list({
         q: query,
         fields: 'files(id, name)',
@@ -108,8 +115,21 @@ export class DriveService {
       const files = response.result.files;
       return files && files.length > 0 ? files[0].id : null;
     } catch (e) {
-      console.error("Error finding folder:", e);
+      console.error("Error finding file:", e);
       return null;
+    }
+  }
+
+  static async getFileContent(fileId: string): Promise<string> {
+    try {
+      const response = await gapi.client.drive.files.get({
+        fileId: fileId,
+        alt: 'media',
+      });
+      return typeof response.body === 'string' ? response.body : JSON.stringify(response.result);
+    } catch (e) {
+      console.error("Error getting file content:", e);
+      throw e;
     }
   }
 
