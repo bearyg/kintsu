@@ -9,8 +9,7 @@ declare global {
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
 const SCOPES = {
-  DRIVE: 'https://www.googleapis.com/auth/drive.file',
-  GMAIL: 'https://www.googleapis.com/auth/gmail.readonly'
+  DRIVE: 'https://www.googleapis.com/auth/drive.file'
 };
 
 export class DriveService {
@@ -80,35 +79,6 @@ export class DriveService {
       // Request token (triggers popup) with base scopes ONLY
       this.tokenClient.requestAccessToken({ prompt: 'consent', scope: SCOPES.DRIVE });
     });
-  }
-
-  static async requestGmailAccess(): Promise<void> {
-      return new Promise((resolve, reject) => {
-        if (!this.tokenClient) return reject("Token Client not initialized");
-
-        // Check if we already have it
-        if (this.grantedScopes.has(SCOPES.GMAIL)) {
-            resolve();
-            return;
-        }
-
-        this.tokenClient.callback = (resp: any) => {
-            if (resp.error) {
-                reject(resp);
-            } else {
-                this.accessToken = resp.access_token;
-                if (resp.scope) {
-                    resp.scope.split(' ').forEach((s: string) => this.grantedScopes.add(s));
-                }
-                gapi.client.setToken(resp);
-                resolve();
-            }
-        };
-
-        // Incremental auth: Request BOTH scopes to get a combined token
-        const combinedScopes = `${SCOPES.DRIVE} ${SCOPES.GMAIL}`;
-        this.tokenClient.requestAccessToken({ prompt: 'consent', scope: combinedScopes });
-      });
   }
 
   static async signOut() {

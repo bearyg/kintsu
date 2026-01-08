@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus, Mail, X } from 'lucide-react';
+import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus, X } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
@@ -57,53 +57,6 @@ const PhaseBadge = ({ step, label, current }: { step: number, label: string, cur
   );
 };
 
-const GmailDialog = ({ isOpen, onClose, onConfirm, loading }: { isOpen: boolean, onClose: () => void, onConfirm: () => void, loading: boolean }) => {
-  if (!isOpen) return null;
-  
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="text-xl font-bold text-[#0F172A] flex items-center gap-2">
-                <Mail className="w-5 h-5 text-[#D4AF37]" />
-                Scan Gmail
-            </h3>
-            <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-            </button>
-        </div>
-        
-        <div className="p-6 space-y-4">
-            <p className="text-slate-600">
-                Kintsu needs your permission to read your emails in order to find receipts, invoices, and order confirmations.
-            </p>
-            <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 text-sm text-orange-800">
-                <strong>Privacy Note:</strong> We only process emails from known merchants (e.g., Amazon, Uber) or those with financial keywords. No other emails are stored.
-            </div>
-        </div>
-
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-            <button 
-                onClick={onClose}
-                disabled={loading}
-                className="px-4 py-2 text-slate-600 font-medium hover:text-slate-900 transition-colors"
-            >
-                Cancel
-            </button>
-            <button 
-                onClick={onConfirm}
-                disabled={loading}
-                className="px-4 py-2 bg-[#0F172A] text-white rounded-lg font-bold hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-                {loading ? 'Scanning...' : 'Authorize & Scan'}
-            </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // --- Main App ---
 
 function App() {
@@ -113,9 +66,7 @@ function App() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
-  const [isScanningGmail, setIsScanningGmail] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [showGmailDialog, setShowGmailDialog] = useState(false);
 
   // Drive Browser State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -270,39 +221,6 @@ function App() {
     }
   };
 
-  const handleScanGmail = async () => {
-    setIsScanningGmail(true);
-    try {
-      // Incremental Auth: Request Gmail scope only now
-      await DriveService.requestGmailAccess();
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const isDebug = urlParams.get('debug') === 'on';
-
-      const resp = await fetch(`${API_BASE}/api/scan-gmail`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_token: DriveService.accessToken,
-          debug_mode: isDebug,
-          trace_id: `trace_${Date.now()}`
-        })
-      });
-      
-      if (!resp.ok) throw new Error("Backend failed to start scan");
-
-      setShowGmailDialog(false);
-      // We could add a toast here, but for now we'll rely on the modal closing and maybe a status indicator in the UI?
-      // Since it's async, the user will see results pop into the stream.
-      
-    } catch (e) {
-      console.error("Gmail scan error:", e);
-      alert("Failed to start Gmail scan. Please try again.");
-    } finally {
-      setIsScanningGmail(false);
-    }
-  };
-
   const handleLogin = async () => {
     try {
       await DriveService.signIn();
@@ -377,17 +295,9 @@ function App() {
     );
   }
 
-  const isGmailFolder = breadcrumbs.some(b => b.name === 'Gmail');
-
   // --- Main Interface ---
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 flex flex-col">
-      <GmailDialog 
-        isOpen={showGmailDialog} 
-        onClose={() => setShowGmailDialog(false)} 
-        onConfirm={handleScanGmail}
-        loading={isScanningGmail}
-      />
       
       {/* Top Navigation */}
       <nav className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-20">
@@ -460,18 +370,6 @@ function App() {
                     >
                         <Plus className="w-4 h-4" />
                     </button>
-                    {/* Header Gmail Button */}
-                    <button 
-                        onClick={() => setShowGmailDialog(true)} 
-                        disabled={isScanningGmail}
-                        className={cn(
-                            "p-2 hover:bg-white rounded-lg transition-colors",
-                            isScanningGmail ? "text-[#D4AF37] animate-pulse" : "text-slate-500"
-                        )}
-                        title="Scan Gmail"
-                    >
-                        <Mail className="w-4 h-4" />
-                    </button>
                     {/* Scan All Button */}
                     <button 
                         onClick={handleScan} 
@@ -494,26 +392,9 @@ function App() {
                         <Loader2 className="w-6 h-6 animate-spin text-slate-300" />
                     </div>
                 ) : driveItems.length === 0 ? (
-                    isGmailFolder ? (
-                        <div className="flex flex-col items-center justify-center py-12 gap-4">
-                            <Mail className="w-12 h-12 text-[#D4AF37] opacity-80" />
-                            <h3 className="text-lg font-bold text-slate-700">Scan your Gmail</h3>
-                            <p className="text-slate-500 text-center max-w-xs text-sm">
-                                Automatically find and extract receipts, invoices, and order confirmations from your inbox.
-                            </p>
-                            <button 
-                                onClick={() => setShowGmailDialog(true)}
-                                className="mt-2 px-6 py-2.5 bg-[#0F172A] text-white rounded-lg font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
-                            >
-                                <RefreshCw className="w-4 h-4" />
-                                Start Gmail Scan
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-lg">
-                            Empty Folder
-                        </div>
-                    )
+                    <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-lg">
+                        Empty Folder
+                    </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {/* Back Button (if not at root) */}

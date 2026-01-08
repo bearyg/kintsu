@@ -37,18 +37,12 @@ describe('DriveService', () => {
     vi.clearAllMocks();
   });
 
-  it('should initialize with correct scopes including Gmail', async () => {
+  it('should initialize with correct scopes', async () => {
     await DriveService.init('test-client-id', 'test-api-key');
 
-    // This assertion should pass (existing functionality)
     expect(mockInitTokenClient).toHaveBeenCalledWith(expect.objectContaining({
       client_id: 'test-client-id',
       scope: expect.stringContaining('https://www.googleapis.com/auth/drive.file'),
-    }));
-
-    // This assertion should FAIL (new requirement)
-    expect(mockInitTokenClient).toHaveBeenCalledWith(expect.objectContaining({
-        scope: expect.stringContaining('https://www.googleapis.com/auth/gmail.readonly')
     }));
   });
 });
