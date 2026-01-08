@@ -5,6 +5,7 @@ import { twMerge } from 'tailwind-merge';
 import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { DriveService } from './DriveService';
+import { TakeoutWizard } from './components/TakeoutWizard';
 
 // --- Configuration ---
 const CLIENT_ID = "351476623210-j0s46m1ermc27qlret2rdn1iqg6re013.apps.googleusercontent.com";
@@ -295,6 +296,8 @@ function App() {
     );
   }
 
+  const isGmailFolder = breadcrumbs.some(b => b.name === 'Gmail');
+
   // --- Main Interface ---
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 flex flex-col">
@@ -392,9 +395,13 @@ function App() {
                         <Loader2 className="w-6 h-6 animate-spin text-slate-300" />
                     </div>
                 ) : driveItems.length === 0 ? (
-                    <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-lg">
-                        Empty Folder
-                    </div>
+                    isGmailFolder ? (
+                        <TakeoutWizard userId="user-default" /> 
+                    ) : (
+                        <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-lg">
+                            Empty Folder
+                        </div>
+                    )
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {/* Back Button (if not at root) */}

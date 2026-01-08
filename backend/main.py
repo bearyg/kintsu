@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from google import genai
 from google.cloud import firestore
+from job_service import JobService
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', force=True)
@@ -28,8 +29,9 @@ app.add_middleware(
 # Config
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-AMAZON_PROCESSOR_URL = os.getenv("AMAZON_PROCESSOR_URL") # e.g., https://...
-GMAIL_INGEST_URL = os.getenv("GMAIL_INGEST_URL")       # e.g., https://...
+AMAZON_PROCESSOR_URL = os.getenv("AMAZON_PROCESSOR_URL")
+GMAIL_INGEST_URL = os.getenv("GMAIL_INGEST_URL")
+BUCKET_NAME = os.getenv("BUCKET_NAME", "kintsu-hopper-kintsu-gcp") # Default bucket
 
 client = None
 if GEMINI_API_KEY:
@@ -39,6 +41,7 @@ if GEMINI_API_KEY:
         logger.error(f"Failed to initialize Gemini Client: {e}")
 
 db = firestore.Client()
+job_service = JobService(BUCKET_NAME)
 
 class RefineRequest(BaseModel):
     file_id: str
@@ -47,12 +50,10 @@ class RefineRequest(BaseModel):
     source_type: str
     debug_mode: bool = False
 
-class GmailScanRequest(BaseModel):
-    access_token: str
-    query: Optional[str] = "subject:(order OR confirmation OR receipt OR invoice)"
-    max_results: int = 10
-    debug_mode: bool = False
-    trace_id: Optional[str] = None
+class JobRequest(BaseModel):
+    userId: str
+    fileName: str
+    debugMode: bool = False
 
 @app.get("/api/health")
 def health_check():
@@ -134,11 +135,6 @@ async def dispatch_amazon_processing(req: RefineRequest):
 
     try:
         logger.info(f"Dispatching to Amazon Processor: {req.fileName}")
-        # Call the Cloud Function
-        # Note: In a real VPC setup, might need authentication (ID Token). 
-        # For this prototype, we'll assume unauthenticated internal or public access if configured that way, 
-        # or we'd need to generate an ID token.
-        # Assuming --allow-unauthenticated for the prototype phase as seen in cloudbuild.yaml.
         
         payload = {
             "file_id": req.file_id,
@@ -157,32 +153,6 @@ async def dispatch_amazon_processing(req: RefineRequest):
     except Exception as e:
         logger.error(f"Failed to dispatch Amazon job: {e}", exc_info=True)
 
-async def dispatch_gmail_scan(req: GmailScanRequest):
-    if not GMAIL_INGEST_URL:
-        logger.error("Gmail Ingest URL not configured.")
-        return
-
-    try:
-        logger.info(f"Dispatching Gmail Scan (Trace: {req.trace_id})")
-        
-        payload = {
-            "access_token": req.access_token,
-            "query": req.query,
-            "max_results": req.max_results,
-            "debug_mode": req.debug_mode,
-            "trace_id": req.trace_id
-        }
-        
-        resp = requests.post(GMAIL_INGEST_URL, json=payload, timeout=300)
-        if resp.status_code == 200:
-            logger.info(f"Gmail Ingest Success: {resp.json()}")
-        else:
-            logger.error(f"Gmail Ingest Failed ({resp.status_code}): {resp.text}")
-            
-    except Exception as e:
-        logger.error(f"Failed to dispatch Gmail job: {e}", exc_info=True)
-
-
 @app.post("/api/refine-drive-file")
 async def refine_drive_file(req: RefineRequest, background_tasks: BackgroundTasks, debug: Optional[str] = None):
     # Override debug_mode if query param is present
@@ -194,24 +164,20 @@ async def refine_drive_file(req: RefineRequest, background_tasks: BackgroundTask
         background_tasks.add_task(dispatch_amazon_processing, req)
         return {"status": "queued", "message": f"Dispatched {req.fileName} to Amazon Processor"}
     
-    # Generic Fallback (Still running locally on Backend container for now)
-    # Ideally, this should also be a function, but we'll keep it here as 'catch-all'.
-    # Note: We need to implement the download logic here if we use process_single_file_generic
-    # OR we can create a GenericProcessor function.
-    # For now, let's keep the generic logic here but we need to restore the download part 
-    # if we want it to work.
-    
-    # ... Restoring minimal download logic for Generic file only ...
-    # (Skipping for brevity in this refactor step unless requested, 
-    # assuming user is focused on Amazon/Gmail separation)
-    
     return {"status": "skipped", "message": "Generic processing temporarily disabled during refactor."}
 
-@app.post("/api/scan-gmail")
-async def scan_gmail(req: GmailScanRequest, background_tasks: BackgroundTasks):
-    logger.info(f"Received scan request. Query: {req.query}. Debug: {req.debug_mode}")
-    background_tasks.add_task(dispatch_gmail_scan, req)
-    return {"status": "queued", "message": f"Gmail scan dispatched for query: {req.query}"}
+@app.post("/api/jobs/create")
+async def create_job(req: JobRequest):
+    """
+    Creates a new async job and returns a signed URL for uploading the file.
+    """
+    try:
+        result = job_service.create_job(req.userId, req.fileName, req.debugMode)
+        logger.info(f"Created Job {result['jobId']} for user {req.userId}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to create job: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

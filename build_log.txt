@@ -1,0 +1,927 @@
+-------------------------------------------------------- REMOTE BUILD OUTPUT ---------------------------------------------------------
+starting build "2432370c-a78a-4f07-a95c-5306944fdb7d"
+FETCHSOURCE
+From https://github.com/bearyg/kintsu
+ * branch            83f95277558013e626933e0ea691de12cd7e3160 -> FETCH_HEAD
+HEAD is now at 83f9527 fix(deps): Pin dependency versions to prevent pip backtracking
+GitCommit:
+83f95277558013e626933e0ea691de12cd7e3160
+BUILD
+Starting Step #5 - "install-frontend"
+Starting Step #3 - "deploy-gmail"
+Starting Step #0 - "build-backend"
+Starting Step #2 - "deploy-amazon"
+Starting Step #6 - "env-frontend"
+Step #5 - "install-frontend": Pulling image: node:18
+Step #3 - "deploy-gmail": Pulling image: gcr.io/google.com/cloudsdktool/cloud-sdk
+Step #6 - "env-frontend": Pulling image: bash
+Step #2 - "deploy-amazon": Pulling image: gcr.io/google.com/cloudsdktool/cloud-sdk
+Step #0 - "build-backend": Already have image (with digest): gcr.io/cloud-builders/docker
+Step #6 - "env-frontend": Using default tag: latest
+Step #2 - "deploy-amazon": Using default tag: latest
+Step #3 - "deploy-gmail": Using default tag: latest
+Step #6 - "env-frontend": latest: Pulling from library/bash
+Step #6 - "env-frontend": 1074353eec0d: Pulling fs layer
+Step #6 - "env-frontend": ee6e4fd1e81e: Pulling fs layer
+Step #6 - "env-frontend": fd359f614f8d: Pulling fs layer
+Step #5 - "install-frontend": 18: Pulling from library/node
+Step #3 - "deploy-gmail": latest: Pulling from google.com/cloudsdktool/cloud-sdk
+Step #3 - "deploy-gmail": c8443a297fa4: Already exists
+Step #6 - "env-frontend": fd359f614f8d: Verifying Checksum
+Step #6 - "env-frontend": fd359f614f8d: Download complete
+Step #2 - "deploy-amazon": latest: Pulling from google.com/cloudsdktool/cloud-sdk
+Step #2 - "deploy-amazon": c8443a297fa4: Already exists
+Step #3 - "deploy-gmail": 31a0f303a19d: Pulling fs layer
+Step #3 - "deploy-gmail": 3501b5d6141b: Pulling fs layer
+Step #3 - "deploy-gmail": 2941e3cc9a33: Pulling fs layer
+Step #3 - "deploy-gmail": 45537110d085: Pulling fs layer
+Step #3 - "deploy-gmail": 4ff9ca14cc68: Pulling fs layer
+Step #3 - "deploy-gmail": 4ff9ca14cc68: Waiting
+Step #0 - "build-backend": Sending build context to Docker daemon  69.63kB
+Step #2 - "deploy-amazon": 31a0f303a19d: Pulling fs layer
+Step #2 - "deploy-amazon": 3501b5d6141b: Pulling fs layer
+Step #2 - "deploy-amazon": 2941e3cc9a33: Pulling fs layer
+Step #2 - "deploy-amazon": 45537110d085: Pulling fs layer
+Step #2 - "deploy-amazon": 4ff9ca14cc68: Pulling fs layer
+Step #2 - "deploy-amazon": 4ff9ca14cc68: Waiting
+Step #5 - "install-frontend": 3e6b9d1a9511: Pulling fs layer
+Step #5 - "install-frontend": 37927ed901b1: Pulling fs layer
+Step #5 - "install-frontend": 79b2f47ad444: Pulling fs layer
+Step #5 - "install-frontend": e23f099911d6: Pulling fs layer
+Step #5 - "install-frontend": cda7f44f2bdd: Pulling fs layer
+Step #5 - "install-frontend": c6b30c3f1696: Pulling fs layer
+Step #5 - "install-frontend": 3697be50c98b: Pulling fs layer
+Step #5 - "install-frontend": 461077a72fb7: Pulling fs layer
+Step #5 - "install-frontend": 3e6b9d1a9511: Waiting
+Step #5 - "install-frontend": 79b2f47ad444: Waiting
+Step #5 - "install-frontend": e23f099911d6: Waiting
+Step #5 - "install-frontend": cda7f44f2bdd: Waiting
+Step #5 - "install-frontend": c6b30c3f1696: Waiting
+Step #5 - "install-frontend": 3697be50c98b: Waiting
+Step #5 - "install-frontend": 461077a72fb7: Waiting
+Step #5 - "install-frontend": 37927ed901b1: Waiting
+Step #6 - "env-frontend": ee6e4fd1e81e: Verifying Checksum
+Step #6 - "env-frontend": ee6e4fd1e81e: Download complete
+Step #6 - "env-frontend": 1074353eec0d: Verifying Checksum
+Step #6 - "env-frontend": 1074353eec0d: Download complete
+Step #2 - "deploy-amazon": 45537110d085: Verifying Checksum
+Step #2 - "deploy-amazon": 45537110d085: Download complete
+Step #2 - "deploy-amazon": 31a0f303a19d: Verifying Checksum
+Step #2 - "deploy-amazon": 31a0f303a19d: Download complete
+Step #3 - "deploy-gmail": 45537110d085: Verifying Checksum
+Step #3 - "deploy-gmail": 45537110d085: Download complete
+Step #3 - "deploy-gmail": 31a0f303a19d: Verifying Checksum
+Step #0 - "build-backend": Step 1/10 : FROM python:3.11-slim
+Step #3 - "deploy-gmail": 4ff9ca14cc68: Verifying Checksum
+Step #2 - "deploy-amazon": 4ff9ca14cc68: Verifying Checksum
+Step #2 - "deploy-amazon": 4ff9ca14cc68: Download complete
+Step #3 - "deploy-gmail": 4ff9ca14cc68: Download complete
+Step #3 - "deploy-gmail": 31a0f303a19d: Pull complete
+Step #2 - "deploy-amazon": 31a0f303a19d: Pull complete
+Step #0 - "build-backend": 3.11-slim: Pulling from library/python
+Step #0 - "build-backend": 02d7611c4eae: Pulling fs layer
+Step #0 - "build-backend": 1473863bb010: Pulling fs layer
+Step #0 - "build-backend": 7cc13cb22d92: Pulling fs layer
+Step #0 - "build-backend": 654a090213c0: Pulling fs layer
+Step #0 - "build-backend": 02d7611c4eae: Waiting
+Step #0 - "build-backend": 1473863bb010: Waiting
+Step #0 - "build-backend": 7cc13cb22d92: Waiting
+Step #0 - "build-backend": 654a090213c0: Waiting
+Step #5 - "install-frontend": 37927ed901b1: Verifying Checksum
+Step #5 - "install-frontend": 37927ed901b1: Download complete
+Step #5 - "install-frontend": 3e6b9d1a9511: Verifying Checksum
+Step #5 - "install-frontend": 3e6b9d1a9511: Download complete
+Step #5 - "install-frontend": cda7f44f2bdd: Verifying Checksum
+Step #5 - "install-frontend": cda7f44f2bdd: Download complete
+Step #5 - "install-frontend": 3697be50c98b: Verifying Checksum
+Step #5 - "install-frontend": 3697be50c98b: Download complete
+Step #5 - "install-frontend": 461077a72fb7: Verifying Checksum
+Step #5 - "install-frontend": 461077a72fb7: Download complete
+Step #5 - "install-frontend": 79b2f47ad444: Verifying Checksum
+Step #5 - "install-frontend": 79b2f47ad444: Download complete
+Step #6 - "env-frontend": 1074353eec0d: Pull complete
+Step #0 - "build-backend": 1473863bb010: Download complete
+Step #5 - "install-frontend": c6b30c3f1696: Verifying Checksum
+Step #5 - "install-frontend": c6b30c3f1696: Download complete
+Step #2 - "deploy-amazon": 2941e3cc9a33: Verifying Checksum
+Step #2 - "deploy-amazon": 2941e3cc9a33: Download complete
+Step #3 - "deploy-gmail": 2941e3cc9a33: Verifying Checksum
+Step #3 - "deploy-gmail": 2941e3cc9a33: Download complete
+Step #0 - "build-backend": 654a090213c0: Verifying Checksum
+Step #0 - "build-backend": 654a090213c0: Download complete
+Step #0 - "build-backend": 02d7611c4eae: Verifying Checksum
+Step #0 - "build-backend": 02d7611c4eae: Download complete
+Step #0 - "build-backend": 7cc13cb22d92: Verifying Checksum
+Step #0 - "build-backend": 7cc13cb22d92: Download complete
+Step #6 - "env-frontend": ee6e4fd1e81e: Pull complete
+Step #6 - "env-frontend": fd359f614f8d: Pull complete
+Step #6 - "env-frontend": Digest: sha256:32ca1653c68dd414bbdcdb9d5dc811010022b04e37bfcc886a5d052fc0c56656
+Step #6 - "env-frontend": Status: Downloaded newer image for bash:latest
+Step #6 - "env-frontend": docker.io/library/bash:latest
+Step #5 - "install-frontend": e23f099911d6: Verifying Checksum
+Step #5 - "install-frontend": e23f099911d6: Download complete
+Step #0 - "build-backend": 02d7611c4eae: Pull complete
+Step #0 - "build-backend": 1473863bb010: Pull complete
+Finished Step #6 - "env-frontend"
+Step #5 - "install-frontend": 3e6b9d1a9511: Pull complete
+Step #0 - "build-backend": 7cc13cb22d92: Pull complete
+Step #0 - "build-backend": 654a090213c0: Pull complete
+Step #0 - "build-backend": Digest: sha256:1dd3dca85e22886e44fcad1bb7ccab6691dfa83db52214cf9e20696e095f3e36
+Step #0 - "build-backend": Status: Downloaded newer image for python:3.11-slim
+Step #0 - "build-backend":  ---> 955f4ccb5624
+Step #0 - "build-backend": Step 2/10 : WORKDIR /app
+Step #0 - "build-backend":  ---> Running in 44499fb0c4aa
+Step #0 - "build-backend": Removing intermediate container 44499fb0c4aa
+Step #0 - "build-backend":  ---> d4b793ba17a2
+Step #0 - "build-backend": Step 3/10 : RUN apt-get update && apt-get install -y --no-install-recommends     gcc     && rm -rf /var/lib/apt/lists/*
+Step #0 - "build-backend":  ---> Running in 67147b21752e
+Step #5 - "install-frontend": 37927ed901b1: Pull complete
+Step #0 - "build-backend": Hit:1 http://deb.debian.org/debian trixie InRelease
+Step #0 - "build-backend": Get:2 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+Step #0 - "build-backend": Get:3 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
+Step #0 - "build-backend": Get:4 http://deb.debian.org/debian trixie/main amd64 Packages [9670 kB]
+Step #0 - "build-backend": Get:5 http://deb.debian.org/debian trixie-updates/main amd64 Packages [5412 B]
+Step #0 - "build-backend": Get:6 http://deb.debian.org/debian-security trixie-security/main amd64 Packages [94.2 kB]
+Step #0 - "build-backend": Fetched 9860 kB in 2s (5581 kB/s)
+Step #0 - "build-backend": Reading package lists...
+Step #0 - "build-backend": Reading package lists...
+Step #0 - "build-backend": Building dependency tree...
+Step #0 - "build-backend": Reading state information...
+Step #0 - "build-backend": The following additional packages will be installed:
+Step #0 - "build-backend":   binutils binutils-common binutils-x86-64-linux-gnu cpp cpp-14
+Step #0 - "build-backend":   cpp-14-x86-64-linux-gnu cpp-x86-64-linux-gnu gcc-14 gcc-14-x86-64-linux-gnu
+Step #0 - "build-backend":   gcc-x86-64-linux-gnu libasan8 libatomic1 libbinutils libcc1-0 libctf-nobfd0
+Step #0 - "build-backend":   libctf0 libgcc-14-dev libgomp1 libgprofng0 libhwasan0 libisl23 libitm1
+Step #0 - "build-backend":   libjansson4 liblsan0 libmpc3 libmpfr6 libquadmath0 libsframe1 libtsan2
+Step #0 - "build-backend":   libubsan1
+Step #0 - "build-backend": Suggested packages:
+Step #0 - "build-backend":   binutils-doc gprofng-gui binutils-gold cpp-doc gcc-14-locales cpp-14-doc
+Step #0 - "build-backend":   gcc-multilib make manpages-dev autoconf automake libtool flex bison gdb
+Step #0 - "build-backend":   gcc-doc gcc-14-multilib gcc-14-doc gdb-x86-64-linux-gnu
+Step #0 - "build-backend": Recommended packages:
+Step #0 - "build-backend":   libc6-dev | libc-dev libc6-dev libc-dev
+Step #0 - "build-backend": The following NEW packages will be installed:
+Step #0 - "build-backend":   binutils binutils-common binutils-x86-64-linux-gnu cpp cpp-14
+Step #0 - "build-backend":   cpp-14-x86-64-linux-gnu cpp-x86-64-linux-gnu gcc gcc-14
+Step #0 - "build-backend":   gcc-14-x86-64-linux-gnu gcc-x86-64-linux-gnu libasan8 libatomic1 libbinutils
+Step #0 - "build-backend":   libcc1-0 libctf-nobfd0 libctf0 libgcc-14-dev libgomp1 libgprofng0 libhwasan0
+Step #0 - "build-backend":   libisl23 libitm1 libjansson4 liblsan0 libmpc3 libmpfr6 libquadmath0
+Step #0 - "build-backend":   libsframe1 libtsan2 libubsan1
+Step #0 - "build-backend": 0 upgraded, 31 newly installed, 0 to remove and 0 not upgraded.
+Step #0 - "build-backend": Need to get 51.9 MB of archives.
+Step #0 - "build-backend": After this operation, 192 MB of additional disk space will be used.
+Step #0 - "build-backend": Get:1 http://deb.debian.org/debian trixie/main amd64 libsframe1 amd64 2.44-3 [78.4 kB]
+Step #0 - "build-backend": Get:2 http://deb.debian.org/debian trixie/main amd64 binutils-common amd64 2.44-3 [2509 kB]
+Step #0 - "build-backend": Get:3 http://deb.debian.org/debian trixie/main amd64 libbinutils amd64 2.44-3 [534 kB]
+Step #0 - "build-backend": Get:4 http://deb.debian.org/debian trixie/main amd64 libgprofng0 amd64 2.44-3 [808 kB]
+Step #0 - "build-backend": Get:5 http://deb.debian.org/debian trixie/main amd64 libctf-nobfd0 amd64 2.44-3 [156 kB]
+Step #0 - "build-backend": Get:6 http://deb.debian.org/debian trixie/main amd64 libctf0 amd64 2.44-3 [88.6 kB]
+Step #0 - "build-backend": Get:7 http://deb.debian.org/debian trixie/main amd64 libjansson4 amd64 2.14-2+b3 [39.8 kB]
+Step #0 - "build-backend": Get:8 http://deb.debian.org/debian trixie/main amd64 binutils-x86-64-linux-gnu amd64 2.44-3 [1014 kB]
+Step #0 - "build-backend": Get:9 http://deb.debian.org/debian trixie/main amd64 binutils amd64 2.44-3 [265 kB]
+Step #0 - "build-backend": Get:10 http://deb.debian.org/debian trixie/main amd64 libisl23 amd64 0.27-1 [659 kB]
+Step #0 - "build-backend": Get:11 http://deb.debian.org/debian trixie/main amd64 libmpfr6 amd64 4.2.2-1 [729 kB]
+Step #0 - "build-backend": Get:12 http://deb.debian.org/debian trixie/main amd64 libmpc3 amd64 1.3.1-1+b3 [52.2 kB]
+Step #0 - "build-backend": Get:13 http://deb.debian.org/debian trixie/main amd64 cpp-14-x86-64-linux-gnu amd64 14.2.0-19 [11.0 MB]
+Step #0 - "build-backend": Get:14 http://deb.debian.org/debian trixie/main amd64 cpp-14 amd64 14.2.0-19 [1280 B]
+Step #0 - "build-backend": Get:15 http://deb.debian.org/debian trixie/main amd64 cpp-x86-64-linux-gnu amd64 4:14.2.0-1 [4840 B]
+Step #0 - "build-backend": Get:16 http://deb.debian.org/debian trixie/main amd64 cpp amd64 4:14.2.0-1 [1568 B]
+Step #0 - "build-backend": Get:17 http://deb.debian.org/debian trixie/main amd64 libcc1-0 amd64 14.2.0-19 [42.8 kB]
+Step #0 - "build-backend": Get:18 http://deb.debian.org/debian trixie/main amd64 libgomp1 amd64 14.2.0-19 [137 kB]
+Step #0 - "build-backend": Get:19 http://deb.debian.org/debian trixie/main amd64 libitm1 amd64 14.2.0-19 [26.0 kB]
+Step #0 - "build-backend": Get:20 http://deb.debian.org/debian trixie/main amd64 libatomic1 amd64 14.2.0-19 [9308 B]
+Step #0 - "build-backend": Get:21 http://deb.debian.org/debian trixie/main amd64 libasan8 amd64 14.2.0-19 [2725 kB]
+Step #0 - "build-backend": Get:22 http://deb.debian.org/debian trixie/main amd64 liblsan0 amd64 14.2.0-19 [1204 kB]
+Step #0 - "build-backend": Get:23 http://deb.debian.org/debian trixie/main amd64 libtsan2 amd64 14.2.0-19 [2460 kB]
+Step #0 - "build-backend": Get:24 http://deb.debian.org/debian trixie/main amd64 libubsan1 amd64 14.2.0-19 [1074 kB]
+Step #0 - "build-backend": Get:25 http://deb.debian.org/debian trixie/main amd64 libhwasan0 amd64 14.2.0-19 [1488 kB]
+Step #0 - "build-backend": Get:26 http://deb.debian.org/debian trixie/main amd64 libquadmath0 amd64 14.2.0-19 [145 kB]
+Step #0 - "build-backend": Get:27 http://deb.debian.org/debian trixie/main amd64 libgcc-14-dev amd64 14.2.0-19 [2672 kB]
+Step #0 - "build-backend": Get:28 http://deb.debian.org/debian trixie/main amd64 gcc-14-x86-64-linux-gnu amd64 14.2.0-19 [21.4 MB]
+Step #0 - "build-backend": Get:29 http://deb.debian.org/debian trixie/main amd64 gcc-14 amd64 14.2.0-19 [540 kB]
+Step #0 - "build-backend": Get:30 http://deb.debian.org/debian trixie/main amd64 gcc-x86-64-linux-gnu amd64 4:14.2.0-1 [1436 B]
+Step #0 - "build-backend": Get:31 http://deb.debian.org/debian trixie/main amd64 gcc amd64 4:14.2.0-1 [5136 B]
+Step #0 - "build-backend": [91mdebconf: unable to initialize frontend: Dialog
+Step #0 - "build-backend": debconf: (TERM is not set, so the dialog frontend is not usable.)
+Step #0 - "build-backend": debconf: falling back to frontend: Readline
+Step #0 - "build-backend": [0m[91mdebconf: unable to initialize frontend: Readline
+Step #0 - "build-backend": debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC entries checked: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.40.1 /usr/local/share/perl/5.40.1 /usr/lib/x86_64-linux-gnu/perl5/5.40 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.40 /usr/share/perl/5.40 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 8, <STDIN> line 31.)
+Step #0 - "build-backend": debconf: falling back to frontend: Teletype
+Step #0 - "build-backend": [0m[91mdebconf: unable to initialize frontend: Teletype
+Step #0 - "build-backend": debconf: (This frontend requires a controlling tty.)
+Step #0 - "build-backend": debconf: falling back to frontend: Noninteractive
+Step #5 - "install-frontend": 79b2f47ad444: Pull complete
+Step #0 - "build-backend": [0mFetched 51.9 MB in 1s (78.6 MB/s)
+Step #0 - "build-backend": Selecting previously unselected package libsframe1:amd64.
+Step #0 - "build-backend": (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 5644 files and directories currently installed.)
+Step #0 - "build-backend": Preparing to unpack .../00-libsframe1_2.44-3_amd64.deb ...
+Step #0 - "build-backend": Unpacking libsframe1:amd64 (2.44-3) ...
+Step #0 - "build-backend": Selecting previously unselected package binutils-common:amd64.
+Step #0 - "build-backend": Preparing to unpack .../01-binutils-common_2.44-3_amd64.deb ...
+Step #0 - "build-backend": Unpacking binutils-common:amd64 (2.44-3) ...
+Step #0 - "build-backend": Selecting previously unselected package libbinutils:amd64.
+Step #0 - "build-backend": Preparing to unpack .../02-libbinutils_2.44-3_amd64.deb ...
+Step #0 - "build-backend": Unpacking libbinutils:amd64 (2.44-3) ...
+Step #0 - "build-backend": Selecting previously unselected package libgprofng0:amd64.
+Step #0 - "build-backend": Preparing to unpack .../03-libgprofng0_2.44-3_amd64.deb ...
+Step #0 - "build-backend": Unpacking libgprofng0:amd64 (2.44-3) ...
+Step #0 - "build-backend": Selecting previously unselected package libctf-nobfd0:amd64.
+Step #0 - "build-backend": Preparing to unpack .../04-libctf-nobfd0_2.44-3_amd64.deb ...
+Step #0 - "build-backend": Unpacking libctf-nobfd0:amd64 (2.44-3) ...
+Step #0 - "build-backend": Selecting previously unselected package libctf0:amd64.
+Step #0 - "build-backend": Preparing to unpack .../05-libctf0_2.44-3_amd64.deb ...
+Step #0 - "build-backend": Unpacking libctf0:amd64 (2.44-3) ...
+Step #0 - "build-backend": Selecting previously unselected package libjansson4:amd64.
+Step #0 - "build-backend": Preparing to unpack .../06-libjansson4_2.14-2+b3_amd64.deb ...
+Step #0 - "build-backend": Unpacking libjansson4:amd64 (2.14-2+b3) ...
+Step #0 - "build-backend": Selecting previously unselected package binutils-x86-64-linux-gnu.
+Step #0 - "build-backend": Preparing to unpack .../07-binutils-x86-64-linux-gnu_2.44-3_amd64.deb ...
+Step #0 - "build-backend": Unpacking binutils-x86-64-linux-gnu (2.44-3) ...
+Step #0 - "build-backend": Selecting previously unselected package binutils.
+Step #0 - "build-backend": Preparing to unpack .../08-binutils_2.44-3_amd64.deb ...
+Step #0 - "build-backend": Unpacking binutils (2.44-3) ...
+Step #0 - "build-backend": Selecting previously unselected package libisl23:amd64.
+Step #0 - "build-backend": Preparing to unpack .../09-libisl23_0.27-1_amd64.deb ...
+Step #0 - "build-backend": Unpacking libisl23:amd64 (0.27-1) ...
+Step #0 - "build-backend": Selecting previously unselected package libmpfr6:amd64.
+Step #0 - "build-backend": Preparing to unpack .../10-libmpfr6_4.2.2-1_amd64.deb ...
+Step #0 - "build-backend": Unpacking libmpfr6:amd64 (4.2.2-1) ...
+Step #0 - "build-backend": Selecting previously unselected package libmpc3:amd64.
+Step #0 - "build-backend": Preparing to unpack .../11-libmpc3_1.3.1-1+b3_amd64.deb ...
+Step #0 - "build-backend": Unpacking libmpc3:amd64 (1.3.1-1+b3) ...
+Step #0 - "build-backend": Selecting previously unselected package cpp-14-x86-64-linux-gnu.
+Step #0 - "build-backend": Preparing to unpack .../12-cpp-14-x86-64-linux-gnu_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking cpp-14-x86-64-linux-gnu (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package cpp-14.
+Step #0 - "build-backend": Preparing to unpack .../13-cpp-14_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking cpp-14 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package cpp-x86-64-linux-gnu.
+Step #0 - "build-backend": Preparing to unpack .../14-cpp-x86-64-linux-gnu_4%3a14.2.0-1_amd64.deb ...
+Step #0 - "build-backend": Unpacking cpp-x86-64-linux-gnu (4:14.2.0-1) ...
+Step #0 - "build-backend": Selecting previously unselected package cpp.
+Step #0 - "build-backend": Preparing to unpack .../15-cpp_4%3a14.2.0-1_amd64.deb ...
+Step #0 - "build-backend": Unpacking cpp (4:14.2.0-1) ...
+Step #0 - "build-backend": Selecting previously unselected package libcc1-0:amd64.
+Step #0 - "build-backend": Preparing to unpack .../16-libcc1-0_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libcc1-0:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libgomp1:amd64.
+Step #0 - "build-backend": Preparing to unpack .../17-libgomp1_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libgomp1:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libitm1:amd64.
+Step #0 - "build-backend": Preparing to unpack .../18-libitm1_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libitm1:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libatomic1:amd64.
+Step #0 - "build-backend": Preparing to unpack .../19-libatomic1_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libatomic1:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libasan8:amd64.
+Step #0 - "build-backend": Preparing to unpack .../20-libasan8_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libasan8:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package liblsan0:amd64.
+Step #0 - "build-backend": Preparing to unpack .../21-liblsan0_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking liblsan0:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libtsan2:amd64.
+Step #0 - "build-backend": Preparing to unpack .../22-libtsan2_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libtsan2:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libubsan1:amd64.
+Step #0 - "build-backend": Preparing to unpack .../23-libubsan1_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libubsan1:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libhwasan0:amd64.
+Step #0 - "build-backend": Preparing to unpack .../24-libhwasan0_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libhwasan0:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libquadmath0:amd64.
+Step #0 - "build-backend": Preparing to unpack .../25-libquadmath0_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libquadmath0:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package libgcc-14-dev:amd64.
+Step #0 - "build-backend": Preparing to unpack .../26-libgcc-14-dev_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking libgcc-14-dev:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package gcc-14-x86-64-linux-gnu.
+Step #0 - "build-backend": Preparing to unpack .../27-gcc-14-x86-64-linux-gnu_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking gcc-14-x86-64-linux-gnu (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package gcc-14.
+Step #0 - "build-backend": Preparing to unpack .../28-gcc-14_14.2.0-19_amd64.deb ...
+Step #0 - "build-backend": Unpacking gcc-14 (14.2.0-19) ...
+Step #0 - "build-backend": Selecting previously unselected package gcc-x86-64-linux-gnu.
+Step #0 - "build-backend": Preparing to unpack .../29-gcc-x86-64-linux-gnu_4%3a14.2.0-1_amd64.deb ...
+Step #0 - "build-backend": Unpacking gcc-x86-64-linux-gnu (4:14.2.0-1) ...
+Step #0 - "build-backend": Selecting previously unselected package gcc.
+Step #0 - "build-backend": Preparing to unpack .../30-gcc_4%3a14.2.0-1_amd64.deb ...
+Step #0 - "build-backend": Unpacking gcc (4:14.2.0-1) ...
+Step #0 - "build-backend": Setting up binutils-common:amd64 (2.44-3) ...
+Step #0 - "build-backend": Setting up libctf-nobfd0:amd64 (2.44-3) ...
+Step #0 - "build-backend": Setting up libgomp1:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libsframe1:amd64 (2.44-3) ...
+Step #0 - "build-backend": Setting up libjansson4:amd64 (2.14-2+b3) ...
+Step #0 - "build-backend": Setting up libmpfr6:amd64 (4.2.2-1) ...
+Step #0 - "build-backend": Setting up libquadmath0:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libmpc3:amd64 (1.3.1-1+b3) ...
+Step #0 - "build-backend": Setting up libatomic1:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libubsan1:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libhwasan0:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libasan8:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libtsan2:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libbinutils:amd64 (2.44-3) ...
+Step #0 - "build-backend": Setting up libisl23:amd64 (0.27-1) ...
+Step #0 - "build-backend": Setting up libcc1-0:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up liblsan0:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libitm1:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libctf0:amd64 (2.44-3) ...
+Step #0 - "build-backend": Setting up libgprofng0:amd64 (2.44-3) ...
+Step #0 - "build-backend": Setting up cpp-14-x86-64-linux-gnu (14.2.0-19) ...
+Step #0 - "build-backend": Setting up cpp-14 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up libgcc-14-dev:amd64 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up binutils-x86-64-linux-gnu (2.44-3) ...
+Step #0 - "build-backend": Setting up cpp-x86-64-linux-gnu (4:14.2.0-1) ...
+Step #0 - "build-backend": Setting up binutils (2.44-3) ...
+Step #0 - "build-backend": Setting up cpp (4:14.2.0-1) ...
+Step #0 - "build-backend": Setting up gcc-14-x86-64-linux-gnu (14.2.0-19) ...
+Step #0 - "build-backend": Setting up gcc-x86-64-linux-gnu (4:14.2.0-1) ...
+Step #0 - "build-backend": Setting up gcc-14 (14.2.0-19) ...
+Step #0 - "build-backend": Setting up gcc (4:14.2.0-1) ...
+Step #0 - "build-backend": Processing triggers for libc-bin (2.41-12) ...
+Step #3 - "deploy-gmail": 3501b5d6141b: Verifying Checksum
+Step #3 - "deploy-gmail": 3501b5d6141b: Download complete
+Step #2 - "deploy-amazon": 3501b5d6141b: Verifying Checksum
+Step #2 - "deploy-amazon": 3501b5d6141b: Download complete
+Step #0 - "build-backend": Removing intermediate container 67147b21752e
+Step #0 - "build-backend":  ---> 889be5a44110
+Step #0 - "build-backend": Step 4/10 : COPY requirements.txt .
+Step #0 - "build-backend":  ---> 7505b1c5618d
+Step #0 - "build-backend": Step 5/10 : RUN pip install --no-cache-dir -r requirements.txt
+Step #0 - "build-backend":  ---> Running in efdd8c8ada9e
+Step #0 - "build-backend": Collecting fastapi>=0.100.0 (from -r requirements.txt (line 1))
+Step #0 - "build-backend":   Downloading fastapi-0.128.0-py3-none-any.whl.metadata (30 kB)
+Step #0 - "build-backend": Collecting uvicorn>=0.20.0 (from -r requirements.txt (line 2))
+Step #0 - "build-backend":   Downloading uvicorn-0.40.0-py3-none-any.whl.metadata (6.7 kB)
+Step #0 - "build-backend": Collecting pydantic>=2.0.0 (from -r requirements.txt (line 3))
+Step #0 - "build-backend":   Downloading pydantic-2.12.5-py3-none-any.whl.metadata (90 kB)
+Step #0 - "build-backend":      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.6/90.6 kB 6.8 MB/s eta 0:00:00
+Step #0 - "build-backend": Collecting google-cloud-storage>=2.10.0 (from -r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading google_cloud_storage-3.7.0-py3-none-any.whl.metadata (14 kB)
+Step #0 - "build-backend": Collecting google-cloud-firestore>=2.11.0 (from -r requirements.txt (line 5))
+Step #0 - "build-backend":   Downloading google_cloud_firestore-2.22.0-py3-none-any.whl.metadata (10 kB)
+Step #0 - "build-backend": Collecting google-generativeai>=0.3.0 (from -r requirements.txt (line 6))
+Step #0 - "build-backend":   Downloading google_generativeai-0.8.6-py3-none-any.whl.metadata (3.9 kB)
+Step #0 - "build-backend": Collecting python-multipart>=0.0.6 (from -r requirements.txt (line 7))
+Step #0 - "build-backend":   Downloading python_multipart-0.0.21-py3-none-any.whl.metadata (1.8 kB)
+Step #0 - "build-backend": Collecting requests>=2.31.0 (from -r requirements.txt (line 8))
+Step #0 - "build-backend":   Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Step #0 - "build-backend": Collecting starlette<0.51.0,>=0.40.0 (from fastapi>=0.100.0->-r requirements.txt (line 1))
+Step #0 - "build-backend":   Downloading starlette-0.50.0-py3-none-any.whl.metadata (6.3 kB)
+Step #0 - "build-backend": Collecting typing-extensions>=4.8.0 (from fastapi>=0.100.0->-r requirements.txt (line 1))
+Step #0 - "build-backend":   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Step #0 - "build-backend": Collecting annotated-doc>=0.0.2 (from fastapi>=0.100.0->-r requirements.txt (line 1))
+Step #0 - "build-backend":   Downloading annotated_doc-0.0.4-py3-none-any.whl.metadata (6.6 kB)
+Step #0 - "build-backend": Collecting click>=7.0 (from uvicorn>=0.20.0->-r requirements.txt (line 2))
+Step #0 - "build-backend":   Downloading click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+Step #0 - "build-backend": Collecting h11>=0.8 (from uvicorn>=0.20.0->-r requirements.txt (line 2))
+Step #0 - "build-backend":   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Step #0 - "build-backend": Collecting annotated-types>=0.6.0 (from pydantic>=2.0.0->-r requirements.txt (line 3))
+Step #0 - "build-backend":   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+Step #5 - "install-frontend": e23f099911d6: Pull complete
+Step #0 - "build-backend": Collecting pydantic-core==2.41.5 (from pydantic>=2.0.0->-r requirements.txt (line 3))
+Step #0 - "build-backend":   Downloading pydantic_core-2.41.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.3 kB)
+Step #5 - "install-frontend": cda7f44f2bdd: Pull complete
+Step #0 - "build-backend": Collecting typing-inspection>=0.4.2 (from pydantic>=2.0.0->-r requirements.txt (line 3))
+Step #0 - "build-backend":   Downloading typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+Step #0 - "build-backend": Collecting google-auth<3.0.0,>=2.26.1 (from google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading google_auth-2.46.0-py3-none-any.whl.metadata (6.8 kB)
+Step #0 - "build-backend": Collecting google-api-core<3.0.0,>=2.27.0 (from google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading google_api_core-2.28.1-py3-none-any.whl.metadata (3.3 kB)
+Step #0 - "build-backend": Collecting google-cloud-core<3.0.0,>=2.4.2 (from google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading google_cloud_core-2.5.0-py3-none-any.whl.metadata (3.1 kB)
+Step #0 - "build-backend": Collecting google-resumable-media<3.0.0,>=2.7.2 (from google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading google_resumable_media-2.8.0-py3-none-any.whl.metadata (2.6 kB)
+Step #0 - "build-backend": Collecting google-crc32c<2.0.0,>=1.1.3 (from google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading google_crc32c-1.8.0-cp311-cp311-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl.metadata (1.7 kB)
+Step #0 - "build-backend": Collecting proto-plus<2.0.0,>=1.22.0 (from google-cloud-firestore>=2.11.0->-r requirements.txt (line 5))
+Step #0 - "build-backend":   Downloading proto_plus-1.27.0-py3-none-any.whl.metadata (2.2 kB)
+Step #0 - "build-backend": Collecting protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<7.0.0dev,>=3.20.2 (from google-cloud-firestore>=2.11.0->-r requirements.txt (line 5))
+Step #0 - "build-backend":   Downloading protobuf-6.33.2-cp39-abi3-manylinux2014_x86_64.whl.metadata (593 bytes)
+Step #0 - "build-backend": Collecting google-ai-generativelanguage==0.6.15 (from google-generativeai>=0.3.0->-r requirements.txt (line 6))
+Step #0 - "build-backend":   Downloading google_ai_generativelanguage-0.6.15-py3-none-any.whl.metadata (5.7 kB)
+Step #0 - "build-backend": Collecting google-api-python-client (from google-generativeai>=0.3.0->-r requirements.txt (line 6))
+Step #0 - "build-backend":   Downloading google_api_python_client-2.187.0-py3-none-any.whl.metadata (7.0 kB)
+Step #0 - "build-backend": Collecting tqdm (from google-generativeai>=0.3.0->-r requirements.txt (line 6))
+Step #0 - "build-backend":   Downloading tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Step #0 - "build-backend":      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 57.7/57.7 kB 127.4 MB/s eta 0:00:00
+Step #0 - "build-backend": Collecting protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<7.0.0dev,>=3.20.2 (from google-cloud-firestore>=2.11.0->-r requirements.txt (line 5))
+Step #0 - "build-backend":   Downloading protobuf-5.29.5-cp38-abi3-manylinux2014_x86_64.whl.metadata (592 bytes)
+Step #0 - "build-backend": Collecting charset_normalizer<4,>=2 (from requests>=2.31.0->-r requirements.txt (line 8))
+Step #0 - "build-backend":   Downloading charset_normalizer-3.4.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (37 kB)
+Step #0 - "build-backend": Collecting idna<4,>=2.5 (from requests>=2.31.0->-r requirements.txt (line 8))
+Step #0 - "build-backend":   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Step #0 - "build-backend": Collecting urllib3<3,>=1.21.1 (from requests>=2.31.0->-r requirements.txt (line 8))
+Step #0 - "build-backend":   Downloading urllib3-2.6.2-py3-none-any.whl.metadata (6.6 kB)
+Step #0 - "build-backend": Collecting certifi>=2017.4.17 (from requests>=2.31.0->-r requirements.txt (line 8))
+Step #0 - "build-backend":   Downloading certifi-2026.1.4-py3-none-any.whl.metadata (2.5 kB)
+Step #0 - "build-backend": Collecting googleapis-common-protos<2.0.0,>=1.56.2 (from google-api-core<3.0.0,>=2.27.0->google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading googleapis_common_protos-1.72.0-py3-none-any.whl.metadata (9.4 kB)
+Step #0 - "build-backend": Collecting grpcio<2.0.0,>=1.33.2 (from google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0,>=1.34.0->google-cloud-firestore>=2.11.0->-r requirements.txt (line 5))
+Step #0 - "build-backend":   Downloading grpcio-1.76.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.7 kB)
+Step #0 - "build-backend": Collecting grpcio-status<2.0.0,>=1.33.2 (from google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0,>=1.34.0->google-cloud-firestore>=2.11.0->-r requirements.txt (line 5))
+Step #0 - "build-backend":   Downloading grpcio_status-1.76.0-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend": Collecting cachetools<7.0,>=2.0.0 (from google-auth<3.0.0,>=2.26.1->google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading cachetools-6.2.4-py3-none-any.whl.metadata (5.6 kB)
+Step #0 - "build-backend": Collecting pyasn1-modules>=0.2.1 (from google-auth<3.0.0,>=2.26.1->google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Step #0 - "build-backend": Collecting rsa<5,>=3.1.4 (from google-auth<3.0.0,>=2.26.1->google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading rsa-4.9.1-py3-none-any.whl.metadata (5.6 kB)
+Step #0 - "build-backend": Collecting anyio<5,>=3.6.2 (from starlette<0.51.0,>=0.40.0->fastapi>=0.100.0->-r requirements.txt (line 1))
+Step #0 - "build-backend":   Downloading anyio-4.12.0-py3-none-any.whl.metadata (4.3 kB)
+Step #0 - "build-backend": Collecting httplib2<1.0.0,>=0.19.0 (from google-api-python-client->google-generativeai>=0.3.0->-r requirements.txt (line 6))
+Step #0 - "build-backend":   Downloading httplib2-0.31.0-py3-none-any.whl.metadata (2.2 kB)
+Step #0 - "build-backend": Collecting google-auth-httplib2<1.0.0,>=0.2.0 (from google-api-python-client->google-generativeai>=0.3.0->-r requirements.txt (line 6))
+Step #0 - "build-backend":   Downloading google_auth_httplib2-0.3.0-py3-none-any.whl.metadata (3.1 kB)
+Step #0 - "build-backend": Collecting uritemplate<5,>=3.0.1 (from google-api-python-client->google-generativeai>=0.3.0->-r requirements.txt (line 6))
+Step #0 - "build-backend":   Downloading uritemplate-4.2.0-py3-none-any.whl.metadata (2.6 kB)
+Step #0 - "build-backend": INFO: pip is looking at multiple versions of grpcio-status to determine which version is compatible with other requirements. This could take a while.
+Step #0 - "build-backend": Collecting grpcio-status<2.0.0,>=1.33.2 (from google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0,>=1.34.0->google-cloud-firestore>=2.11.0->-r requirements.txt (line 5))
+Step #0 - "build-backend":   Downloading grpcio_status-1.75.1-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend":   Downloading grpcio_status-1.75.0-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend":   Downloading grpcio_status-1.74.0-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend":   Downloading grpcio_status-1.73.1-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend":   Downloading grpcio_status-1.73.0-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend":   Downloading grpcio_status-1.72.2-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend":   Downloading grpcio_status-1.72.1-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend": INFO: pip is still looking at multiple versions of grpcio-status to determine which version is compatible with other requirements. This could take a while.
+Step #0 - "build-backend":   Downloading grpcio_status-1.71.2-py3-none-any.whl.metadata (1.1 kB)
+Step #0 - "build-backend": Collecting pyparsing<4,>=3.0.4 (from httplib2<1.0.0,>=0.19.0->google-api-python-client->google-generativeai>=0.3.0->-r requirements.txt (line 6))
+Step #0 - "build-backend":   Downloading pyparsing-3.3.1-py3-none-any.whl.metadata (5.6 kB)
+Step #0 - "build-backend": Collecting pyasn1<0.7.0,>=0.6.1 (from pyasn1-modules>=0.2.1->google-auth<3.0.0,>=2.26.1->google-cloud-storage>=2.10.0->-r requirements.txt (line 4))
+Step #0 - "build-backend":   Downloading pyasn1-0.6.1-py3-none-any.whl.metadata (8.4 kB)
+Step #0 - "build-backend": Downloading fastapi-0.128.0-py3-none-any.whl (103 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.1/103.1 kB 66.9 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading uvicorn-0.40.0-py3-none-any.whl (68 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 68.5/68.5 kB 148.6 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading pydantic-2.12.5-py3-none-any.whl (463 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 463.6/463.6 kB 31.2 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading pydantic_core-2.41.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 100.3 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading google_cloud_storage-3.7.0-py3-none-any.whl (303 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 303.4/303.4 kB 161.8 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading google_cloud_firestore-2.22.0-py3-none-any.whl (377 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 377.2/377.2 kB 170.8 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading google_generativeai-0.8.6-py3-none-any.whl (155 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 155.1/155.1 kB 168.5 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading google_ai_generativelanguage-0.6.15-py3-none-any.whl (1.3 MB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 105.0 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading python_multipart-0.0.21-py3-none-any.whl (24 kB)
+Step #0 - "build-backend": Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.7/64.7 kB 71.5 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+Step #0 - "build-backend": Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Step #0 - "build-backend": Downloading certifi-2026.1.4-py3-none-any.whl (152 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 152.9/152.9 kB 190.0 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading charset_normalizer-3.4.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (151 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 151.6/151.6 kB 168.4 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading click-8.3.1-py3-none-any.whl (108 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 108.3/108.3 kB 127.8 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading google_api_core-2.28.1-py3-none-any.whl (173 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 173.7/173.7 kB 166.1 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading google_auth-2.46.0-py3-none-any.whl (233 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 233.7/233.7 kB 186.1 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading google_cloud_core-2.5.0-py3-none-any.whl (29 kB)
+Step #0 - "build-backend": Downloading google_crc32c-1.8.0-cp311-cp311-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl (33 kB)
+Step #0 - "build-backend": Downloading google_resumable_media-2.8.0-py3-none-any.whl (81 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 81.3/81.3 kB 175.1 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+Step #0 - "build-backend": Downloading idna-3.11-py3-none-any.whl (71 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.0/71.0 kB 138.3 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading proto_plus-1.27.0-py3-none-any.whl (50 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.2/50.2 kB 116.5 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading protobuf-5.29.5-cp38-abi3-manylinux2014_x86_64.whl (319 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 319.9/319.9 kB 234.2 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading starlette-0.50.0-py3-none-any.whl (74 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 74.0/74.0 kB 149.8 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 147.7 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Step #0 - "build-backend": Downloading urllib3-2.6.2-py3-none-any.whl (131 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 131.2/131.2 kB 164.2 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading google_api_python_client-2.187.0-py3-none-any.whl (14.6 MB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.6/14.6 MB 144.5 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading tqdm-4.67.1-py3-none-any.whl (78 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 kB 143.6 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading anyio-4.12.0-py3-none-any.whl (113 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.4/113.4 kB 144.6 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading cachetools-6.2.4-py3-none-any.whl (11 kB)
+Step #0 - "build-backend": Downloading google_auth_httplib2-0.3.0-py3-none-any.whl (9.5 kB)
+Step #0 - "build-backend": Downloading googleapis_common_protos-1.72.0-py3-none-any.whl (297 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 297.5/297.5 kB 177.2 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading grpcio-1.76.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (6.6 MB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 90.6 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading grpcio_status-1.71.2-py3-none-any.whl (14 kB)
+Step #0 - "build-backend": Downloading httplib2-0.31.0-py3-none-any.whl (91 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 91.1/91.1 kB 159.0 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.3/181.3 kB 161.0 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading rsa-4.9.1-py3-none-any.whl (34 kB)
+Step #0 - "build-backend": Downloading uritemplate-4.2.0-py3-none-any.whl (11 kB)
+Step #0 - "build-backend": Downloading pyasn1-0.6.1-py3-none-any.whl (83 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.1/83.1 kB 166.1 MB/s eta 0:00:00
+Step #0 - "build-backend": Downloading pyparsing-3.3.1-py3-none-any.whl (121 kB)
+Step #0 - "build-backend":    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.8/121.8 kB 171.0 MB/s eta 0:00:00
+Step #5 - "install-frontend": c6b30c3f1696: Pull complete
+Step #0 - "build-backend": Installing collected packages: urllib3, uritemplate, typing-extensions, tqdm, python-multipart, pyparsing, pyasn1, protobuf, idna, h11, google-crc32c, click, charset_normalizer, certifi, cachetools, annotated-types, annotated-doc, uvicorn, typing-inspection, rsa, requests, pydantic-core, pyasn1-modules, proto-plus, httplib2, grpcio, googleapis-common-protos, google-resumable-media, anyio, starlette, pydantic, grpcio-status, google-auth, google-auth-httplib2, google-api-core, fastapi, google-cloud-core, google-api-python-client, google-cloud-storage, google-cloud-firestore, google-ai-generativelanguage, google-generativeai
+Step #5 - "install-frontend": 3697be50c98b: Pull complete
+Step #5 - "install-frontend": 461077a72fb7: Pull complete
+Step #5 - "install-frontend": Digest: sha256:c6ae79e38498325db67193d391e6ec1d224d96c693a8a4d943498556716d3783
+Step #5 - "install-frontend": Status: Downloaded newer image for node:18
+Step #5 - "install-frontend": docker.io/library/node:18
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'lru-cache@11.2.4',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '20 || >=22' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'lru-cache@11.2.4',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '20 || >=22' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@exodus/bytes@1.8.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '^20.19.0 || ^22.12.0 || >=24.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/ai@2.6.1',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/app@0.14.6',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/app-check@0.11.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/app-check-compat@0.4.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/app-compat@0.5.6',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/auth@1.12.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/auth-compat@0.6.2',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/component@0.7.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/database@1.1.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/database-compat@2.1.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/firestore@4.9.3',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/firestore-compat@0.4.3',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/functions@0.13.1',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/functions-compat@0.4.1',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/logger@0.5.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/storage@0.14.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/storage-compat@0.4.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@firebase/util@1.13.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: '@vitejs/plugin-react@5.1.2',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '^20.19.0 || >=22.12.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'cssstyle@5.3.6',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'lru-cache@11.2.4',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '20 || >=22' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'data-urls@6.0.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'html-encoding-sniffer@6.0.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '^20.19.0 || ^22.12.0 || >=24.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'jsdom@27.4.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '^20.19.0 || ^22.12.0 || >=24.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'tr46@6.0.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'vite@7.3.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '^20.19.0 || >=22.12.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'vitest@4.0.16',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '^20.0.0 || ^22.0.0 || >=24.0.0' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'webidl-conversions@8.0.1',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #5 - "install-frontend": npm warn EBADENGINE Unsupported engine {
+Step #5 - "install-frontend": npm warn EBADENGINE   package: 'whatwg-url@15.1.0',
+Step #5 - "install-frontend": npm warn EBADENGINE   required: { node: '>=20' },
+Step #5 - "install-frontend": npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+Step #5 - "install-frontend": npm warn EBADENGINE }
+Step #0 - "build-backend": Successfully installed annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.12.0 cachetools-6.2.4 certifi-2026.1.4 charset_normalizer-3.4.4 click-8.3.1 fastapi-0.128.0 google-ai-generativelanguage-0.6.15 google-api-core-2.28.1 google-api-python-client-2.187.0 google-auth-2.46.0 google-auth-httplib2-0.3.0 google-cloud-core-2.5.0 google-cloud-firestore-2.22.0 google-cloud-storage-3.7.0 google-crc32c-1.8.0 google-generativeai-0.8.6 google-resumable-media-2.8.0 googleapis-common-protos-1.72.0 grpcio-1.76.0 grpcio-status-1.71.2 h11-0.16.0 httplib2-0.31.0 idna-3.11 proto-plus-1.27.0 protobuf-5.29.5 pyasn1-0.6.1 pyasn1-modules-0.4.2 pydantic-2.12.5 pydantic-core-2.41.5 pyparsing-3.3.1 python-multipart-0.0.21 requests-2.32.5 rsa-4.9.1 starlette-0.50.0 tqdm-4.67.1 typing-extensions-4.15.0 typing-inspection-0.4.2 uritemplate-4.2.0 urllib3-2.6.2 uvicorn-0.40.0
+Step #0 - "build-backend": [91mWARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Step #0 - "build-backend": [0m[91m
+Step #0 - "build-backend": [notice] A new release of pip is available: 24.0 -> 25.3
+Step #0 - "build-backend": [notice] To update, run: pip install --upgrade pip
+Step #0 - "build-backend": [0mRemoving intermediate container efdd8c8ada9e
+Step #0 - "build-backend":  ---> aff52aee6944
+Step #0 - "build-backend": Step 6/10 : COPY . .
+Step #0 - "build-backend":  ---> 890e83ad4dbd
+Step #0 - "build-backend": Step 7/10 : ENV PORT=8080
+Step #0 - "build-backend":  ---> Running in c9f11485d8a4
+Step #0 - "build-backend": Removing intermediate container c9f11485d8a4
+Step #0 - "build-backend":  ---> e82c25c42890
+Step #0 - "build-backend": Step 8/10 : ENV ENVIRONMENT=production
+Step #0 - "build-backend":  ---> Running in 6b81a7ac2f20
+Step #0 - "build-backend": Removing intermediate container 6b81a7ac2f20
+Step #0 - "build-backend":  ---> 0ff57a954309
+Step #0 - "build-backend": Step 9/10 : EXPOSE 8080
+Step #0 - "build-backend":  ---> Running in 36783e1eeac1
+Step #0 - "build-backend": Removing intermediate container 36783e1eeac1
+Step #0 - "build-backend":  ---> ba0e0d50520b
+Step #0 - "build-backend": Step 10/10 : CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+Step #0 - "build-backend":  ---> Running in 5eb7f715abe8
+Step #0 - "build-backend": Removing intermediate container 5eb7f715abe8
+Step #0 - "build-backend":  ---> 096e07cc8c28
+Step #0 - "build-backend": Successfully built 096e07cc8c28
+Step #0 - "build-backend": Successfully tagged us-central1-docker.pkg.dev/kintsu-gcp/kintsu-repo/kintsu-backend:latest
+Finished Step #0 - "build-backend"
+Starting Step #1 - "push-backend"
+Step #1 - "push-backend": Already have image (with digest): gcr.io/cloud-builders/docker
+Step #1 - "push-backend": The push refers to repository [us-central1-docker.pkg.dev/kintsu-gcp/kintsu-repo/kintsu-backend]
+Step #1 - "push-backend": 36263ebd9471: Preparing
+Step #1 - "push-backend": 1500abcd2e59: Preparing
+Step #1 - "push-backend": f9ccb6ebb6df: Preparing
+Step #1 - "push-backend": 62a73aa4c41c: Preparing
+Step #1 - "push-backend": c490f9e36295: Preparing
+Step #1 - "push-backend": 253032e9f52a: Preparing
+Step #1 - "push-backend": 72533f233c8a: Preparing
+Step #1 - "push-backend": 501421e049a1: Preparing
+Step #1 - "push-backend": 6a7f953ae30c: Preparing
+Step #1 - "push-backend": 253032e9f52a: Layer already exists
+Step #1 - "push-backend": 72533f233c8a: Layer already exists
+Step #1 - "push-backend": 501421e049a1: Layer already exists
+Step #5 - "install-frontend":
+Step #5 - "install-frontend": added 423 packages, and audited 424 packages in 33s
+Step #5 - "install-frontend":
+Step #5 - "install-frontend": 85 packages are looking for funding
+Step #5 - "install-frontend":   run `npm fund` for details
+Step #5 - "install-frontend":
+Step #5 - "install-frontend": found 0 vulnerabilities
+Step #1 - "push-backend": f9ccb6ebb6df: Pushed
+Step #1 - "push-backend": c490f9e36295: Pushed
+Step #1 - "push-backend": 36263ebd9471: Pushed
+Finished Step #5 - "install-frontend"
+Starting Step #7 - "build-frontend"
+Step #7 - "build-frontend": Already have image (with digest): node:18
+Step #7 - "build-frontend":
+Step #7 - "build-frontend": > kintsu-app@0.0.0 build
+Step #7 - "build-frontend": > tsc -b && vite build
+Step #7 - "build-frontend":
+Step #7 - "build-frontend": You are using Node.js 18.20.8. Vite requires Node.js version 20.19+ or 22.12+. Please upgrade your Node.js version.
+Step #7 - "build-frontend": vite v7.3.0 building client environment for production...
+Step #7 - "build-frontend": transforming...
+Step #1 - "push-backend": 6a7f953ae30c: Pushed
+Step #1 - "push-backend": 1500abcd2e59: Pushed
+Step #7 - "build-frontend": ✓ 1721 modules transformed.
+Step #7 - "build-frontend": node_modules/gapi-script/gapiScript.js (44:36): Use of eval in "node_modules/gapi-script/gapiScript.js" is strongly discouraged as it poses security risks and may cause issues with minification.
+Step #7 - "build-frontend": rendering chunks...
+Step #7 - "build-frontend": computing gzip size...
+Step #7 - "build-frontend":
+Step #7 - "build-frontend": (!) Some chunks are larger than 500 kB after minification. Consider:
+Step #7 - "build-frontend": - Using dynamic import() to code-split the application
+Step #7 - "build-frontend": - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+Step #7 - "build-frontend": - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Step #7 - "build-frontend": dist/index.html                   0.61 kB │ gzip:   0.34 kB
+Step #7 - "build-frontend": dist/assets/index-D0wr1qbk.css   13.49 kB │ gzip:   3.47 kB
+Step #7 - "build-frontend": dist/assets/index-_C00cylH.js   615.20 kB │ gzip: 185.86 kB
+Step #7 - "build-frontend": ✓ built in 14.43s
+Finished Step #7 - "build-frontend"
+Starting Step #8 - "deploy-frontend"
+Step #8 - "deploy-frontend": Already have image (with digest): node:18
+Step #1 - "push-backend": 62a73aa4c41c: Pushed
+Step #1 - "push-backend": latest: digest: sha256:4d62ea11d818515803c637e9a653c1daa3563955483961700514fb58b725321b size: 2206
+Finished Step #1 - "push-backend"
+Step #2 - "deploy-amazon": 3501b5d6141b: Pull complete
+Step #3 - "deploy-gmail": 3501b5d6141b: Pull complete
+Step #8 - "deploy-frontend": npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+Step #8 - "deploy-frontend":
+Step #8 - "deploy-frontend": added 607 packages in 57s
+Step #8 - "deploy-frontend":
+Step #8 - "deploy-frontend": 77 packages are looking for funding
+Step #8 - "deploy-frontend":   run `npm fund` for details
+Step #2 - "deploy-amazon": 2941e3cc9a33: Pull complete
+Step #3 - "deploy-gmail": 2941e3cc9a33: Pull complete
+Step #3 - "deploy-gmail": 45537110d085: Pull complete
+Step #2 - "deploy-amazon": 45537110d085: Pull complete
+Step #3 - "deploy-gmail": 4ff9ca14cc68: Pull complete
+Step #2 - "deploy-amazon": 4ff9ca14cc68: Pull complete
+Step #2 - "deploy-amazon": Digest: sha256:e5988181787670e47bab44136eefd93001baea254c49413b7ec03eae2e9470a5
+Step #3 - "deploy-gmail": Digest: sha256:e5988181787670e47bab44136eefd93001baea254c49413b7ec03eae2e9470a5
+Step #3 - "deploy-gmail": Status: Downloaded newer image for gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+Step #2 - "deploy-amazon": Status: Downloaded newer image for gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+Step #3 - "deploy-gmail": gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+Step #2 - "deploy-amazon": gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+Step #8 - "deploy-frontend":
+Step #8 - "deploy-frontend": === Deploying to 'kintsu-gcp'...
+Step #8 - "deploy-frontend":
+Step #8 - "deploy-frontend": i  deploying hosting
+Step #8 - "deploy-frontend": i  hosting[kintsu-gcp]: beginning deploy...
+Step #8 - "deploy-frontend": i  hosting[kintsu-gcp]: found 6 files in dist
+Step #8 - "deploy-frontend": i  hosting: upload complete
+Step #8 - "deploy-frontend": ✔  hosting[kintsu-gcp]: file upload complete
+Step #8 - "deploy-frontend": i  hosting[kintsu-gcp]: finalizing version...
+Step #8 - "deploy-frontend": ✔  hosting[kintsu-gcp]: version finalized
+Step #8 - "deploy-frontend": i  hosting[kintsu-gcp]: releasing new version...
+Step #8 - "deploy-frontend": ✔  hosting[kintsu-gcp]: release complete
+Step #8 - "deploy-frontend":
+Step #8 - "deploy-frontend": ✔  Deploy complete!
+Step #8 - "deploy-frontend":
+Step #8 - "deploy-frontend": Project Console: https://console.firebase.google.com/project/kintsu-gcp/overview
+Step #8 - "deploy-frontend": Hosting URL: https://kintsu-gcp.web.app
+Finished Step #8 - "deploy-frontend"
+Step #3 - "deploy-gmail": Preparing function...
+Step #2 - "deploy-amazon": Preparing function...
+Step #3 - "deploy-gmail": .........done.
+Step #3 - "deploy-gmail": Updating function (may take a while)...
+Step #2 - "deploy-amazon": .........done.
+Step #2 - "deploy-amazon": Updating function (may take a while)...
+Step #3 - "deploy-gmail": [Build].........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................done
+Step #2 - "deploy-amazon": [Build]..................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................done
+Step #3 - "deploy-gmail": [Service].......................................................................................................................warning
+Step #3 - "deploy-gmail": Completed with warnings:
+Step #3 - "deploy-gmail":   [WARNING] Cloud Run service projects/kintsu-gcp/locations/us-central1/services/kintsu-ingest-gmail for the function was not found. The service was redeployed with default values.
+Step #2 - "deploy-amazon": [Service]......................................................................................................warning
+Step #2 - "deploy-amazon": Completed with warnings:
+Step #2 - "deploy-amazon":   [INFO] A new revision will be deployed serving with 100% traffic.
+Step #3 - "deploy-gmail": You can view your function in the Cloud Console here: https://console.cloud.google.com/functions/details/us-central1/kintsu-ingest-gmail?project=kintsu-gcp
+Step #3 - "deploy-gmail":
+Step #3 - "deploy-gmail": buildConfig:
+Step #3 - "deploy-gmail":   automaticUpdatePolicy: {}
+Step #3 - "deploy-gmail":   build: projects/351476623210/locations/us-central1/builds/7f593843-d266-475a-b148-7b87ae487658
+Step #3 - "deploy-gmail":   dockerRegistry: ARTIFACT_REGISTRY
+Step #3 - "deploy-gmail":   dockerRepository: projects/kintsu-gcp/locations/us-central1/repositories/gcf-artifacts
+Step #3 - "deploy-gmail":   entryPoint: ingest_gmail
+Step #3 - "deploy-gmail":   runtime: python311
+Step #3 - "deploy-gmail":   serviceAccount: projects/kintsu-gcp/serviceAccounts/351476623210-compute@developer.gserviceaccount.com
+Step #3 - "deploy-gmail":   source:
+Step #3 - "deploy-gmail":     storageSource:
+Step #3 - "deploy-gmail":       bucket: gcf-v2-sources-351476623210-us-central1
+Step #3 - "deploy-gmail":       generation: '1767661587851464'
+Step #3 - "deploy-gmail":       object: kintsu-ingest-gmail/function-source.zip
+Step #3 - "deploy-gmail":   sourceProvenance:
+Step #3 - "deploy-gmail":     resolvedStorageSource:
+Step #3 - "deploy-gmail":       bucket: gcf-v2-sources-351476623210-us-central1
+Step #3 - "deploy-gmail":       generation: '1767661587851464'
+Step #3 - "deploy-gmail":       object: kintsu-ingest-gmail/function-source.zip
+Step #3 - "deploy-gmail": createTime: '2026-01-06T00:45:16.095927351Z'
+Step #3 - "deploy-gmail": environment: GEN_2
+Step #3 - "deploy-gmail": labels:
+Step #3 - "deploy-gmail":   deployment-tool: cli-gcloud
+Step #3 - "deploy-gmail": name: projects/kintsu-gcp/locations/us-central1/functions/kintsu-ingest-gmail
+Step #3 - "deploy-gmail": satisfiesPzi: true
+Step #3 - "deploy-gmail": serviceConfig:
+Step #3 - "deploy-gmail":   allTrafficOnLatestRevision: true
+Step #3 - "deploy-gmail":   availableCpu: '0.3333'
+Step #3 - "deploy-gmail":   availableMemory: 512Mi
+Step #3 - "deploy-gmail":   environmentVariables:
+Step #3 - "deploy-gmail":     LOG_EXECUTION_ID: 'true'
+Step #3 - "deploy-gmail":   ingressSettings: ALLOW_ALL
+Step #3 - "deploy-gmail":   maxInstanceRequestConcurrency: 1
+Step #3 - "deploy-gmail":   revision: kintsu-ingest-gmail-00001-dox
+Step #3 - "deploy-gmail":   secretEnvironmentVariables:
+Step #3 - "deploy-gmail":   - key: GEMINI_API_KEY
+Step #3 - "deploy-gmail":     projectId: '351476623210'
+Step #3 - "deploy-gmail":     secret: GEMINI_API_KEY
+Step #3 - "deploy-gmail":     version: latest
+Step #3 - "deploy-gmail":   service: projects/kintsu-gcp/locations/us-central1/services/kintsu-ingest-gmail
+Step #3 - "deploy-gmail":   serviceAccountEmail: 351476623210-compute@developer.gserviceaccount.com
+Step #3 - "deploy-gmail":   timeoutSeconds: 60
+Step #3 - "deploy-gmail":   uri: https://kintsu-ingest-gmail-oft4mhfkua-uc.a.run.app
+Step #3 - "deploy-gmail": state: ACTIVE
+Step #3 - "deploy-gmail": updateTime: '2026-01-06T01:07:43.116492004Z'
+Step #3 - "deploy-gmail": url: https://us-central1-kintsu-gcp.cloudfunctions.net/kintsu-ingest-gmail
+Step #2 - "deploy-amazon": You can view your function in the Cloud Console here: https://console.cloud.google.com/functions/details/us-central1/kintsu-processor-amazon?project=kintsu-gcp
+Step #2 - "deploy-amazon":
+Step #2 - "deploy-amazon": buildConfig:
+Step #2 - "deploy-amazon":   automaticUpdatePolicy: {}
+Step #2 - "deploy-amazon":   build: projects/351476623210/locations/us-central1/builds/1fa5051d-b813-483d-b5f9-9f047560949d
+Step #2 - "deploy-amazon":   dockerRegistry: ARTIFACT_REGISTRY
+Step #2 - "deploy-amazon":   dockerRepository: projects/kintsu-gcp/locations/us-central1/repositories/gcf-artifacts
+Step #2 - "deploy-amazon":   entryPoint: process_amazon
+Step #2 - "deploy-amazon":   runtime: python311
+Step #2 - "deploy-amazon":   serviceAccount: projects/kintsu-gcp/serviceAccounts/351476623210-compute@developer.gserviceaccount.com
+Step #2 - "deploy-amazon":   source:
+Step #2 - "deploy-amazon":     storageSource:
+Step #2 - "deploy-amazon":       bucket: gcf-v2-sources-351476623210-us-central1
+Step #2 - "deploy-amazon":       generation: '1767661587928892'
+Step #2 - "deploy-amazon":       object: kintsu-processor-amazon/function-source.zip
+Step #2 - "deploy-amazon":   sourceProvenance:
+Step #2 - "deploy-amazon":     resolvedStorageSource:
+Step #2 - "deploy-amazon":       bucket: gcf-v2-sources-351476623210-us-central1
+Step #2 - "deploy-amazon":       generation: '1767661587928892'
+Step #2 - "deploy-amazon":       object: kintsu-processor-amazon/function-source.zip
+Step #2 - "deploy-amazon": createTime: '2026-01-06T00:42:45.281456960Z'
+Step #2 - "deploy-amazon": environment: GEN_2
+Step #2 - "deploy-amazon": labels:
+Step #2 - "deploy-amazon":   deployment-tool: cli-gcloud
+Step #2 - "deploy-amazon": name: projects/kintsu-gcp/locations/us-central1/functions/kintsu-processor-amazon
+Step #2 - "deploy-amazon": satisfiesPzi: true
+Step #2 - "deploy-amazon": serviceConfig:
+Step #2 - "deploy-amazon":   allTrafficOnLatestRevision: true
+Step #2 - "deploy-amazon":   availableCpu: '0.3333'
+Step #2 - "deploy-amazon":   availableMemory: 512Mi
+Step #2 - "deploy-amazon":   environmentVariables:
+Step #2 - "deploy-amazon":     LOG_EXECUTION_ID: 'true'
+Step #2 - "deploy-amazon":   ingressSettings: ALLOW_ALL
+Step #2 - "deploy-amazon":   maxInstanceCount: 16
+Step #2 - "deploy-amazon":   maxInstanceRequestConcurrency: 1
+Step #2 - "deploy-amazon":   revision: kintsu-processor-amazon-00003-bik
+Step #2 - "deploy-amazon":   service: projects/kintsu-gcp/locations/us-central1/services/kintsu-processor-amazon
+Step #2 - "deploy-amazon":   serviceAccountEmail: 351476623210-compute@developer.gserviceaccount.com
+Step #2 - "deploy-amazon":   timeoutSeconds: 60
+Step #2 - "deploy-amazon":   uri: https://kintsu-processor-amazon-oft4mhfkua-uc.a.run.app
+Step #2 - "deploy-amazon": state: ACTIVE
+Step #2 - "deploy-amazon": updateTime: '2026-01-06T01:07:43.038542976Z'
+Step #2 - "deploy-amazon": url: https://us-central1-kintsu-gcp.cloudfunctions.net/kintsu-processor-amazon
+Finished Step #3 - "deploy-gmail"
+Finished Step #2 - "deploy-amazon"
+Starting Step #4 - "deploy-backend"
+Step #4 - "deploy-backend": Already have image (with digest): gcr.io/google.com/cloudsdktool/cloud-sdk
+Step #4 - "deploy-backend": Fetching Function URLs...
+Step #4 - "deploy-backend": Amazon Processor URL: https://kintsu-processor-amazon-oft4mhfkua-uc.a.run.app
+Step #4 - "deploy-backend": Gmail Ingest URL: https://kintsu-ingest-gmail-oft4mhfkua-uc.a.run.app
+Step #4 - "deploy-backend": Deploying container to Cloud Run service [kintsu-backend] in project [kintsu-gcp] region [us-central1]
+Step #4 - "deploy-backend": Deploying...
+Step #4 - "deploy-backend": Setting IAM Policy.........done
+--------------------------------------------------------------------------------------------------------------------------------------
