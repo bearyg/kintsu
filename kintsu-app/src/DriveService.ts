@@ -23,12 +23,27 @@ export class DriveService {
     return new Promise<void>((resolve, reject) => {
       // 1. Load GAPI Client
       gapi.load('client', async () => {
-        try {
-          await gapi.client.init({
-            apiKey: apiKey,
-            discoveryDocs: [DISCOVERY_DOC],
-          });
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            await gapi.client.init({
+              apiKey: apiKey,
+              discoveryDocs: [DISCOVERY_DOC],
+            });
+            break; // Success
+          } catch (e: any) {
+            console.warn(`GAPI Init failed, retrying... (${retries} left)`, e);
+            retries--;
+            if (retries === 0) {
+              reject(e);
+              return;
+            }
+            // Wait 1s before retry
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        }
 
+        try {
           // 2. Init GIS Token Client
           // @ts-ignore - google global is loaded by script tag in index.html
           if (window.google) {
