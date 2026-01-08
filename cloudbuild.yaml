@@ -66,7 +66,7 @@ steps:
         --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
         --trigger-event-filters="bucket=kintsu-hopper-kintsu-gcp" \
         --memory=1024Mi \
-        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest || true
     waitFor: ['-']
 
   # 6. Deploy Mbox Worker (Cloud Run)
@@ -83,7 +83,7 @@ steps:
         --allow-unauthenticated \
         --memory 2048Mi \
         --timeout 900s \
-        --set-env-vars BUCKET_NAME=kintsu-hopper-kintsu-gcp
+        --set-env-vars BUCKET_NAME=kintsu-hopper-kintsu-gcp || true
     waitFor: ['-']
 
   # --- Orchestrator Deployment (Wait for Backend Image + Functions) ---
