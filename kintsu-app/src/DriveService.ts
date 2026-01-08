@@ -10,7 +10,7 @@ const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/res
 
 const SCOPES = {
   DRIVE: 'https://www.googleapis.com/auth/drive.file',
-  IDENTITY: 'openid email profile'
+  IDENTITY: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
 };
 
 export class DriveService {
