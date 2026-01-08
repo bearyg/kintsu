@@ -8,7 +8,7 @@ Kintsu is a forensic data recovery platform designed specifically for survivors 
 - **Middle Server (Orchestrator):** Python (FastAPI) on **Cloud Run**. Handles Google Drive communication and coordination.
 - **The Hopper (Storage):** User's personal **Google Drive**. The app only requests access to its own files/folders (`drive.file` scope).
 - **The Refinery (AI):** **Gemini 2.5 Pro** integration for structured data extraction from images, PDFs, and CSVs.
-- **Golden Record (Database):** **Firestore (NoSQL)**. Real-time sync of refined shards.
+- **Golden Record (Database):** **Firestore (NoSQL)**. Real-time sync of refined shards. (BYOS Mode: Data stored in user's Drive).
 
 ## 🔄 The Recovery Process
 
