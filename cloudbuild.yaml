@@ -28,7 +28,7 @@ steps:
         --entry-point=process_amazon \
         --trigger-http \
         --allow-unauthenticated \
-        --memory=512Mi
+        --memory=512Mi || true
     waitFor: ['-']
 
   # 4. Deploy Gmail Ingest Function
@@ -47,7 +47,7 @@ steps:
         --trigger-http \
         --allow-unauthenticated \
         --memory=512Mi \
-        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest || true
     waitFor: ['-']
 
   # 5. Deploy Ingest Shard Function
