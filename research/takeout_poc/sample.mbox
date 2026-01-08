@@ -1,0 +1,28 @@
+From MAILER-DAEMON Fri Jul  8 12:08:34 2011
+From: Author <author@example.com>
+To: Recipient <recipient@example.com>
+Subject: Sample Message 1
+Date: Fri, 08 Jul 2011 12:08:34 -0000
+
+This is the body.
+>From (should be escaped).
+There are 3 lines.
+
+From MAILER-DAEMON Fri Jul  8 12:08:34 2011
+From: Author <author@example.com>
+To: Recipient <recipient@example.com>
+Subject: Sample Message 2
+Date: Fri, 08 Jul 2011 12:08:34 -0000
+Content-Type: multipart/alternative; boundary="boundary42"
+
+--boundary42
+Content-Type: text/plain; charset="utf-8"
+
+This is the plain text version.
+
+--boundary42
+Content-Type: text/html; charset="utf-8"
+
+<html><body>This is the <b>HTML</b> version.</body></html>
+
+--boundary42--

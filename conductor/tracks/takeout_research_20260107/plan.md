@@ -11,14 +11,14 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: API & Automation Research' (Protocol in workflow.md)
 
 ## Phase 2: Mbox Parsing Proof-of-Concept
-- [ ] Task: Create a directory `research/takeout_poc/` for the prototype.
-- [ ] Task: Write a Python script (`parser.py`) to read a standard `.mbox` file.
-    - [ ] Sub-task: Use the native `mailbox` library.
-    - [ ] Sub-task: Implement iteration over messages.
-- [ ] Task: Implement "Extraction Logic" in the script.
-    - [ ] Sub-task: Extract Subject, From, Date, and HTML Body from a message.
-    - [ ] Sub-task: Verify it handles "multipart" messages correctly (like our existing Gmail processor).
-- [ ] Task: Test against a sample Mbox file (create a dummy one if needed).
+- [x] Task: Create a directory `research/takeout_poc/` for the prototype.
+- [x] Task: Write a Python script (`parser.py`) to read a standard `.mbox` file.
+    - [x] Sub-task: Use the native `mailbox` library.
+    - [x] Sub-task: Implement iteration over messages.
+- [x] Task: Implement "Extraction Logic" in the script.
+    - [x] Sub-task: Extract Subject, From, Date, and HTML Body from a message.
+    - [x] Sub-task: Verify it handles "multipart" messages correctly (like our existing Gmail processor).
+- [x] Task: Test against a sample Mbox file (create a dummy one if needed).
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Mbox Parsing PoC' (Protocol in workflow.md)
 
 ## Phase 3: Synthesis & Recommendation
