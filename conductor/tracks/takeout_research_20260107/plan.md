@@ -1,13 +1,13 @@
 # Plan: Research Spike - Google Takeout Feasibility
 
 ## Phase 1: API & Automation Research
-- [ ] Task: Investigate official Google Data Portability & Takeout APIs.
-    - [ ] Sub-task: Research the "Google Data Portability API" (specifically `portability.google.com`) for direct programmatic access to exports.
-    - [ ] Sub-task: Check Google Cloud documentation for "Data Transfer Project" integration and service-to-service transfer capabilities.
-    - [ ] Sub-task: Search for "deep linking" capabilities in the Google Takeout web interface (e.g., pre-filling checkboxes or query strings via URL parameters).
-- [ ] Task: Investigate "Browser Automation" & User-Side Helpers.
-    - [ ] Sub-task: Evaluate if a simple "Bookmarklet" or Browser Extension could automate the form-filling (selecting Mail, entering the query string).
-- [ ] Task: Document findings in `research_takeout_automation.md` (to be created in the track directory).
+- [x] Task: Investigate official Google Data Portability & Takeout APIs.
+    - [x] Sub-task: Research the "Google Data Portability API" (specifically `portability.google.com`) for direct programmatic access to exports.
+    - [x] Sub-task: Check Google Cloud documentation for "Data Transfer Project" integration and service-to-service transfer capabilities.
+    - [x] Sub-task: Search for "deep linking" capabilities in the Google Takeout web interface (e.g., pre-filling checkboxes or query strings via URL parameters).
+- [x] Task: Investigate "Browser Automation" & User-Side Helpers.
+    - [x] Sub-task: Evaluate if a simple "Bookmarklet" or Browser Extension could automate the form-filling (selecting Mail, entering the query string).
+- [x] Task: Document findings in `research_takeout_automation.md` (to be created in the track directory).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: API & Automation Research' (Protocol in workflow.md)
 
 ## Phase 2: Mbox Parsing Proof-of-Concept
