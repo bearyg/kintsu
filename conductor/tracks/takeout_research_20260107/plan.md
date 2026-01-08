@@ -10,7 +10,7 @@
 - [x] Task: Document findings in `research_takeout_automation.md` (to be created in the track directory).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: API & Automation Research' (Protocol in workflow.md)
 
-## Phase 2: Mbox Parsing Proof-of-Concept
+## Phase 2: Mbox Parsing Proof-of-Concept [checkpoint: 83e7e58]
 - [x] Task: Create a directory `research/takeout_poc/` for the prototype.
 - [x] Task: Write a Python script (`parser.py`) to read a standard `.mbox` file.
     - [x] Sub-task: Use the native `mailbox` library.
