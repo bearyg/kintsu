@@ -7,7 +7,6 @@ const API_BASE = "https://kintsu-backend-351476623210.us-central1.run.app"; // S
 
 export const TakeoutWizard = ({ userId }: { userId: string }) => {
   const [step, setStep] = useState(1);
-  const [jobId, setJobId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -32,7 +31,6 @@ export const TakeoutWizard = ({ userId }: { userId: string }) => {
         body: JSON.stringify({ userId, fileName: file.name })
       });
       const { jobId, uploadUrl } = await res.json();
-      setJobId(jobId);
 
       // 2. Upload to GCS
       await fetch(uploadUrl, {
@@ -44,7 +42,7 @@ export const TakeoutWizard = ({ userId }: { userId: string }) => {
       setStep(4);
       
       // 3. Listen for Progress
-      const unsub = onSnapshot(doc(db, "jobs", jobId), (doc) => {
+      onSnapshot(doc(db, "jobs", jobId), (doc) => {
         const data = doc.data();
         if (data) {
             setProgress(data.progress || 0);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus, X } from 'lucide-react';
+import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
