@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, Timestamp, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { DriveService } from './DriveService';
 import { TakeoutWizard } from './components/TakeoutWizard';
@@ -12,6 +12,12 @@ const CLIENT_ID = "351476623210-j0s46m1ermc27qlret2rdn1iqg6re013.apps.googleuser
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
 // --- Types ---
+interface UserInfo {
+  id: string;
+  email: string;
+  name: string;
+}
+
 interface ExtractedData {
   item_name?: string;
   total_amount?: number;
@@ -155,6 +161,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [currentPhase] = useState(2); 
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -167,6 +174,21 @@ function App() {
 
   const API_BASE = "https://kintsu-backend-351476623210.us-central1.run.app";
 
+  const registerUser = async (user: UserInfo) => {
+    try {
+      const userRef = doc(db, "users", user.id);
+      await setDoc(userRef, {
+        name: user.name,
+        email: user.email,
+        lastLogin: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      setCurrentUser(user);
+    } catch (e) {
+      console.error("Failed to register user:", e);
+    }
+  };
+
   // Init App
   useEffect(() => {
     const initApp = async () => {
@@ -174,6 +196,9 @@ function App() {
         await DriveService.init(CLIENT_ID, API_KEY);
         setIsSignedIn(DriveService.isSignedIn);
         if (DriveService.isSignedIn) {
+             const user = await DriveService.getUserProfile();
+             await registerUser(user);
+
              const kintsuId = await DriveService.findFolder('Kintsu');
              if (kintsuId) {
                  const hopperId = await DriveService.findFolder('Hopper', kintsuId);
@@ -316,6 +341,9 @@ function App() {
     try {
       await DriveService.signIn();
       setIsSignedIn(true);
+
+      const user = await DriveService.getUserProfile();
+      await registerUser(user);
       
       await DriveService.ensureHopperStructure();
       
@@ -336,6 +364,7 @@ function App() {
   const handleLogout = async () => {
     await DriveService.signOut();
     setIsSignedIn(false);
+    setCurrentUser(null);
     setCurrentFolderId(null);
     setBreadcrumbs([]);
   };
@@ -412,6 +441,13 @@ function App() {
                 <PhaseBadge step={4} label="Maximize" current={currentPhase} />
              </div>
              
+             {currentUser && (
+               <div className="flex flex-col items-end mr-2">
+                 <span className="text-xs font-bold text-[#0F172A]">{currentUser.name}</span>
+                 <span className="text-[10px] text-slate-400">{currentUser.email}</span>
+               </div>
+             )}
+
              <button onClick={handleLogout} className="text-slate-400 hover:text-slate-600">
                <LogOut className="w-5 h-5" />
              </button>
