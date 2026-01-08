@@ -21,7 +21,7 @@
 - [x] Task: Test against a sample Mbox file (create a dummy one if needed).
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Mbox Parsing PoC' (Protocol in workflow.md)
 
-## Phase 3: Synthesis & Recommendation
+## Phase 3: Synthesis & Recommendation [checkpoint: d96d9ab]
 - [x] Task: Compile the "Feasibility Report" combining API findings and Parser results.
 - [x] Task: Update the `spec.md` or create a new "Proposal" document with the Go/No-Go decision.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Final Recommendation' (Protocol in workflow.md)
