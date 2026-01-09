@@ -9,10 +9,7 @@ declare global {
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
 const SCOPES_LIST = [
-  'https://www.googleapis.com/auth/drive.file',
-  'openid',
-  'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/userinfo.profile'
+  'https://www.googleapis.com/auth/drive.file'
 ];
 
 const SCOPES = SCOPES_LIST.join(' ');
@@ -173,18 +170,7 @@ export class DriveService {
     return !!this.accessToken;
   }
 
-  static async getUserProfile(): Promise<{ id: string, email: string, name: string }> {
-    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { 'Authorization': `Bearer ${this.accessToken}` }
-    });
-    if (!response.ok) throw new Error("Failed to fetch user profile");
-    const data = await response.json();
-    return {
-      id: data.sub,
-      email: data.email,
-      name: data.name
-    };
-  }
+
 
   // --- Folder Management ---
 
