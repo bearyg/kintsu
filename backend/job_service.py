@@ -37,13 +37,32 @@ class JobService:
         db.collection("jobs").document(job_id).set(job_data)
         
         # Generate Signed URL (valid for 15 minutes)
+        # Use Impersonated Credentials to sign via IAM API (fixes "no private key" on Cloud Run)
+        import google.auth
+        from google.auth import impersonated_credentials
+        from google.auth.transport.requests import Request
+
+        source_credentials, project = google.auth.default()
+        target_principal = "351476623210-compute@developer.gserviceaccount.com"
+        
+        # Create impersonated credentials (self-impersonation to get signing capability)
+        creds = impersonated_credentials.Credentials(
+            source_credentials=source_credentials,
+            target_principal=target_principal,
+            target_scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            lifetime=3600
+        )
+        
+        # Refresh to ensure token is valid
+        creds.refresh(Request())
+
         blob = self.bucket.blob(blob_name)
         url = blob.generate_signed_url(
             version="v4",
             expiration=timedelta(minutes=15),
             method="PUT",
             content_type="application/octet-stream",
-            service_account_email="351476623210-compute@developer.gserviceaccount.com"
+            credentials=creds
         )
         
         return {
