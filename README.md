@@ -20,7 +20,7 @@ Kintsu is a forensic data recovery platform designed specifically for survivors 
 ## 🚀 CI/CD Pipeline
 
 The project is configured with **Google Cloud Build**.
-- **Triggers:** Automatically on push to the `main` branch.
+- **Triggers:** Automatically on push to the `main` or `dev` branch.
 - **Workflow:**
     1. Build Backend Docker image.
     2. Deploy Backend to Cloud Run.
