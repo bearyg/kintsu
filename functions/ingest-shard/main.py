@@ -35,7 +35,19 @@ def handle_zip_archive(bucket, blob):
     Downloads, unzips, and re-uploads files to GCS under Hopper/Extracted/
     """
     zip_name = os.path.basename(blob.name).replace('.zip', '')
-    print(f"Unzipping {blob.name} to Hopper/Extracted/{zip_name}/...")
+    
+    # Extract Context (User/Job) from path if available
+    # Path: uploads/{userId}/{jobId}/{filename}
+    parts = blob.name.split('/')
+    base_path = f"Hopper/Extracted/{zip_name}"
+    
+    if len(parts) >= 4 and parts[0] == 'uploads':
+        user_id = parts[1]
+        job_id = parts[2]
+        base_path = f"Hopper/Extracted/{user_id}/{job_id}"
+        print(f"Detected Context - User: {user_id}, Job: {job_id}")
+
+    print(f"Unzipping {blob.name} to {base_path}/...")
 
     try:
         zip_bytes = blob.download_as_bytes()
@@ -49,8 +61,8 @@ def handle_zip_archive(bucket, blob):
 
                 file_data = z.read(filename)
                 
-                # Construct new path: Hopper/Extracted/{ZipName}/{OriginalStructure}
-                new_blob_name = f"Hopper/Extracted/{zip_name}/{filename}"
+                # Construct new path: {base_path}/{filename}
+                new_blob_name = f"{base_path}/{filename}"
                 
                 new_blob = bucket.blob(new_blob_name)
                 new_blob.upload_from_string(file_data)

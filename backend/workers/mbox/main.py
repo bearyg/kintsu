@@ -68,18 +68,32 @@ async def handle_event(request: Request):
         return {"status": "ignored"}
 
     # Verify it's a job upload
-    if not name.startswith("uploads/"):
+    # Verify it's a job upload OR an extracted mbox
+    if name.startswith("uploads/"):
+        # Path: uploads/{userId}/{jobId}/{filename}
+        parts = name.split('/')
+        if len(parts) < 4:
+            logger.error(f"Invalid upload path: {name}")
+            return {"status": "error"}
+        job_id = parts[2]
+        user_id = parts[1]
+        
+    elif name.startswith("Hopper/Extracted/"):
+        # Path: Hopper/Extracted/{userId}/{jobId}/{filename}
+        parts = name.split('/')
+        if len(parts) < 5:
+             logger.error(f"Invalid extraction path: {name}")
+             return {"status": "ignored"}
+        
+        # Verify it is an mbox file
+        if not name.endswith(".mbox"):
+             return {"status": "ignored"}
+
+        user_id = parts[2]
+        job_id = parts[3]
+    else:
         logger.info(f"Ignoring non-upload file: {name}")
         return {"status": "ignored"}
-
-    # Extract Job ID from path: uploads/{userId}/{jobId}/{filename}
-    parts = name.split('/')
-    if len(parts) < 4:
-        logger.error(f"Invalid upload path: {name}")
-        return {"status": "error"}
-    
-    job_id = parts[2]
-    user_id = parts[1]
     
     logger.info(f"Processing Job {job_id} for User {user_id}")
     job_service.update_progress(job_id, 10, "processing", "Worker started. Downloading file...")
