@@ -83,7 +83,7 @@ steps:
         --allow-unauthenticated \
         --memory 2048Mi \
         --timeout 900s \
-        --set-env-vars BUCKET_NAME=kintsu-hopper-kintsu-gcp || true
+        --set-env-vars BUCKET_NAME=kintsu-hopper-kintsu-gcp
     waitFor: ['-']
 
   # --- Orchestrator Deployment (Wait for Backend Image + Functions) ---
