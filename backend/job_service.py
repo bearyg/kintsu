@@ -42,7 +42,8 @@ class JobService:
             version="v4",
             expiration=timedelta(minutes=15),
             method="PUT",
-            content_type="application/octet-stream" 
+            content_type="application/octet-stream",
+            service_account_email="351476623210-compute@developer.gserviceaccount.com"
         )
         
         return {
