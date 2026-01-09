@@ -8,15 +8,21 @@ declare global {
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
-const SCOPES = {
-  DRIVE: 'https://www.googleapis.com/auth/drive.file',
-  IDENTITY: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
-};
+const SCOPES_LIST = [
+  'https://www.googleapis.com/auth/drive.file',
+  'openid',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile'
+];
+
+const SCOPES = SCOPES_LIST.join(' ');
 
 export class DriveService {
   static tokenClient: any;
   static accessToken: string | null = null;
   static grantedScopes: Set<string> = new Set();
+
+
 
   // Initialize GAPI client (for requests) and GIS (for auth)
   static async init(clientId: string, apiKey: string) {
@@ -47,18 +53,49 @@ export class DriveService {
           // 2. Init GIS Token Client
           // @ts-ignore - google global is loaded by script tag in index.html
           if (window.google) {
+            if (window.location.search.includes('debug=on')) {
+              console.group('OAuth Init');
+              console.log('Requesting Scopes:', SCOPES_LIST);
+              console.groupEnd();
+            }
+
             this.tokenClient = window.google.accounts.oauth2.initTokenClient({
               client_id: clientId,
-              scope: `${SCOPES.DRIVE} ${SCOPES.IDENTITY}`, // Include Identity Scopes
+              scope: SCOPES,
               callback: (tokenResponse: any) => {
+                if (window.location.search.includes('debug=on')) {
+                  console.group('OAuth Callback');
+                  console.log('Token Response:', tokenResponse);
+                }
+
                 if (tokenResponse && tokenResponse.access_token) {
                   this.accessToken = tokenResponse.access_token;
-                  // Track scopes granted (simple heuristic)
+
+                  // Track scopes granted
                   if (tokenResponse.scope) {
-                      tokenResponse.scope.split(' ').forEach((s: string) => this.grantedScopes.add(s));
+                    const granted = tokenResponse.scope.split(' ');
+                    granted.forEach((s: string) => this.grantedScopes.add(s));
+
+                    if (window.location.search.includes('debug=on')) {
+                      console.log('Granted Scopes:', granted);
+                      const missing = SCOPES_LIST.filter(s => !granted.includes(s));
+                      if (missing.length > 0) {
+                        console.warn('MISMATCH! Missing Scopes:', missing);
+                      } else {
+                        console.log('All requested scopes granted.');
+                      }
+                    }
                   }
+
+                  if (window.location.search.includes('debug=on')) {
+                    if (tokenResponse.error) {
+                      console.error('OAuth Error:', tokenResponse.error);
+                    }
+                    console.groupEnd();
+                  }
+
                   // Set token for GAPI calls
-                  gapi.client.setToken(tokenResponse); 
+                  gapi.client.setToken(tokenResponse);
                 }
               },
             });
@@ -76,16 +113,38 @@ export class DriveService {
   static async signIn(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.tokenClient) return reject("Token Client not initialized");
-      
+
       // Override callback to resolve this specific request
       this.tokenClient.callback = (resp: any) => {
+        if (window.location.search.includes('debug=on')) {
+          console.group('OAuth Callback (SignIn)');
+          console.log('Response:', resp);
+        }
+
         if (resp.error) {
+          if (window.location.search.includes('debug=on')) {
+            console.error('SignIn Error:', resp);
+            console.groupEnd();
+          }
           reject(resp);
         } else {
           this.accessToken = resp.access_token;
           if (resp.scope) {
-             resp.scope.split(' ').forEach((s: string) => this.grantedScopes.add(s));
+            const granted = resp.scope.split(' ');
+            granted.forEach((s: string) => this.grantedScopes.add(s));
+
+            if (window.location.search.includes('debug=on')) {
+              const missing = SCOPES_LIST.filter(s => !granted.includes(s));
+              if (missing.length > 0) {
+                console.warn('MISMATCH! Missing Scopes:', missing);
+              }
+            }
           }
+
+          if (window.location.search.includes('debug=on')) {
+            console.groupEnd();
+          }
+
           // IMPORTANT: Set the token for future GAPI requests
           gapi.client.setToken(resp);
           resolve();
@@ -93,7 +152,10 @@ export class DriveService {
       };
 
       // Request token (triggers popup) with base scopes
-      this.tokenClient.requestAccessToken({ prompt: 'consent', scope: `${SCOPES.DRIVE} ${SCOPES.IDENTITY}` });
+      if (window.location.search.includes('debug=on')) {
+        console.log('Triggering RequestAccessToken with:', SCOPES);
+      }
+      this.tokenClient.requestAccessToken({ prompt: 'consent', scope: SCOPES });
     });
   }
 
@@ -101,7 +163,7 @@ export class DriveService {
     const token = gapi.client.getToken();
     if (token !== null) {
       // @ts-ignore
-      window.google.accounts.oauth2.revoke(token.access_token, () => {});
+      window.google.accounts.oauth2.revoke(token.access_token, () => { });
       gapi.client.setToken(null);
       this.accessToken = null;
     }
@@ -196,13 +258,13 @@ export class DriveService {
       for (const container of containers) {
         const subId = await this.findFolder(container, hopperId);
         if (!subId) {
-           console.log(`Creating ${container} container...`);
-           await this.createFolder(container, hopperId);
+          console.log(`Creating ${container} container...`);
+          await this.createFolder(container, hopperId);
         }
       }
-      
+
       console.log("Hopper Structure Verified.");
-      
+
     } catch (error) {
       console.error("Error setting up Drive folders:", error);
       throw error;
@@ -227,9 +289,9 @@ export class DriveService {
     });
 
     if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+      throw new Error(`Upload failed: ${response.statusText}`);
     }
-    
+
     return await response.json();
   }
 
@@ -253,49 +315,49 @@ export class DriveService {
       console.log("Starting Hopper Scan...");
       const kintsuId = await this.findFolder('Kintsu');
       if (!kintsuId) {
-          console.warn("Kintsu folder not found");
-          return [];
+        console.warn("Kintsu folder not found");
+        return [];
       }
-      
+
       const hopperId = await this.findFolder('Hopper', kintsuId);
       if (!hopperId) {
-          console.warn("Hopper folder not found");
-          return [];
+        console.warn("Hopper folder not found");
+        return [];
       }
 
       console.log(`Found Hopper ID: ${hopperId}`);
-      
+
       // Recursive Walker
       const allFiles: any[] = [];
-      
+
       async function walk(folderId: string, folderName: string, depth: number = 0) {
         console.log(`[Scan] Walking ${folderName} (${folderId}), depth ${depth}`);
         if (depth > 4) return;
 
         try {
-            const resp = await gapi.client.drive.files.list({
-              q: `'${folderId}' in parents and trashed=false`,
-              fields: 'files(id, name, mimeType)',
-              pageSize: 100
-            });
-            
-            const items = resp.result.files || [];
-            console.log(`[Scan] Found ${items.length} items in ${folderName}`);
-            
-            for (const item of items) {
-              // Log every item seen
-              console.log(`[Scan] Item: ${item.name} (${item.mimeType})`);
+          const resp = await gapi.client.drive.files.list({
+            q: `'${folderId}' in parents and trashed=false`,
+            fields: 'files(id, name, mimeType)',
+            pageSize: 100
+          });
 
-              if (item.mimeType === 'application/vnd.google-apps.folder') {
-                await walk(item.id, item.name, depth + 1);
-              } else {
-                // It's a file
-                console.log(`[Scan] >>> Candidate File: ${item.name}`);
-                allFiles.push({ ...item, sourceType: folderName }); 
-              }
+          const items = resp.result.files || [];
+          console.log(`[Scan] Found ${items.length} items in ${folderName}`);
+
+          for (const item of items) {
+            // Log every item seen
+            console.log(`[Scan] Item: ${item.name} (${item.mimeType})`);
+
+            if (item.mimeType === 'application/vnd.google-apps.folder') {
+              await walk(item.id, item.name, depth + 1);
+            } else {
+              // It's a file
+              console.log(`[Scan] >>> Candidate File: ${item.name}`);
+              allFiles.push({ ...item, sourceType: folderName });
             }
+          }
         } catch (err) {
-            console.error(`[Scan] Error walking ${folderName}:`, err);
+          console.error(`[Scan] Error walking ${folderName}:`, err);
         }
       }
 
