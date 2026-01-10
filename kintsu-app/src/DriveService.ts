@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
 
 const SCOPES_LIST = [
   'https://www.googleapis.com/auth/drive.file'
