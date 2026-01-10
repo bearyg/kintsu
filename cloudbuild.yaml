@@ -83,7 +83,8 @@ steps:
         --allow-unauthenticated \
         --memory 2048Mi \
         --timeout 900s \
-        --set-env-vars BUCKET_NAME=kintsu-hopper-kintsu-gcp
+        --set-env-vars BUCKET_NAME=kintsu-hopper-kintsu-gcp \
+        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
     waitFor: ['-']
 
   # --- Orchestrator Deployment (Wait for Backend Image + Functions) ---

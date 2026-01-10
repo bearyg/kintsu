@@ -3,10 +3,15 @@ import json
 import logging
 import mailbox
 import tempfile
+import io
+import time
 from fastapi import FastAPI, Request
 from google.cloud import storage, firestore
 from job_service import JobService  # Shared logic
-# Import other shared modules if needed (e.g. storage adapter)
+from utils import sanitize_filename
+from logger import DriveLogger
+from google import genai
+from google.genai import types
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,24 +23,132 @@ db = firestore.Client()
 BUCKET_NAME = os.getenv("BUCKET_NAME", "kintsu-hopper-kintsu-gcp")
 job_service = JobService(BUCKET_NAME)
 
-def extract_body(message):
-    body = ""
-    if message.is_multipart():
-        for part in message.walk():
-            ctype = part.get_content_type()
-            cdispo = str(part.get('Content-Disposition'))
-            if ctype == 'text/html' and 'attachment' not in cdispo:
-                try:
-                    body = part.get_payload(decode=True).decode('utf-8')
-                    return body
-                except:
-                    pass
-    else:
+class EmailProcessor:
+    def __init__(self, bucket, base_path, logger):
+        self.bucket = bucket
+        self.base_path = base_path.rstrip('/')
+        self.logger = logger
+        
+    def process_message(self, message):
+        """
+        Extracts content from a message and saves EML/HTML files.
+        Returns: base_name (str) if processed, None if skipped/error.
+        """
+        msg_id = message.get('Message-ID', '').strip()
+        if not msg_id:
+            # Fallback for missing ID
+            msg_id = f"no_id_{int(time.time()*1000)}"
+            
+        safe_name = sanitize_filename(msg_id)
+        
+        # Paths
+        eml_path_rel = f"{self.base_path}/{safe_name}.eml"
+        html_path_rel = f"{self.base_path}/{safe_name}.html"
+        
+        # Idempotency Check (Check if EML exists)
+        blob = self.bucket.blob(eml_path_rel)
+        if blob.exists():
+            self.logger.log_event("skipped", msg_id, "Duplicate file exists")
+            return None
+
         try:
-             body = message.get_payload(decode=True).decode('utf-8')
-        except:
-            pass
-    return body
+            # 1. Save EML (Binary)
+            blob.upload_from_file(io.BytesIO(message.as_bytes()), content_type='message/rfc822')
+            
+            # 2. Extract & Save HTML
+            html_body = self._get_html_body(message)
+            if html_body:
+                html_blob = self.bucket.blob(html_path_rel)
+                html_blob.upload_from_string(html_body, content_type='text/html')
+                
+                # 3. Gemini Extraction (Async-ish)
+                self.extract_inventory(html_body, safe_name)
+            
+            self.logger.log_event("processed", msg_id, f"Saved to {safe_name}")
+            return safe_name
+            
+        except Exception as e:
+            self.logger.log_event("error", msg_id, str(e))
+            return None
+
+    def extract_inventory(self, email_body, base_name):
+        """
+        Uses Gemini to extract inventory data from the email body.
+        Saves result to <base_name>.json.
+        """
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            self.logger.log_event("warning", base_name, "GEMINI_API_KEY not set")
+            return
+
+        try:
+            client = genai.Client(api_key=api_key)
+            
+            prompt = """
+            Analyze this email and extract inventory items purchased or described.
+            Return ONLY a JSON object with this schema:
+            {
+                "items": [
+                    {
+                        "name": "Item Name",
+                        "description": "Brief description",
+                        "price": 0.00,
+                        "currency": "USD",
+                        "category": "Electronics/Clothing/etc",
+                        "quantity": 1
+                    }
+                ],
+                "transaction": {
+                    "merchant": "Merchant Name",
+                    "date": "YYYY-MM-DD",
+                    "order_number": "Order #",
+                    "total_amount": 0.00,
+                    "currency": "USD"
+                }
+            }
+            If no inventory items are found, return items array as empty.
+            """
+            
+            response = client.models.generate_content(
+                model="gemini-1.5-flash",
+                contents=[prompt, email_body],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                )
+            )
+            
+            if response.text:
+                json_content = response.text
+                
+                # Save JSON
+                json_path_rel = f"{self.base_path}/{base_name}.json"
+                blob = self.bucket.blob(json_path_rel)
+                blob.upload_from_string(json_content, content_type='application/json')
+                
+                self.logger.log_event("extracted", base_name, "Inventory JSON saved")
+
+        except Exception as e:
+            self.logger.log_event("error", base_name, f"Gemini Extraction Failed: {e}")
+
+    def _get_html_body(self, message):
+        body = ""
+        if message.is_multipart():
+            for part in message.walk():
+                ctype = part.get_content_type()
+                cdispo = str(part.get('Content-Disposition'))
+                if ctype == 'text/html' and 'attachment' not in cdispo:
+                    try:
+                        body = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                        return body
+                    except:
+                        pass
+        else:
+            # Fallback to plain text if that's all there is, or try to get payload
+             try:
+                 body = message.get_payload(decode=True).decode('utf-8', errors='replace')
+             except:
+                 pass
+        return body
 
 @app.post("/")
 async def handle_event(request: Request):
@@ -67,7 +180,6 @@ async def handle_event(request: Request):
         logger.error("Could not parse GCS event")
         return {"status": "ignored"}
 
-    # Verify it's a job upload
     # Verify it's a job upload OR an extracted mbox
     if name.startswith("uploads/"):
         # Path: uploads/{userId}/{jobId}/{filename}
@@ -107,43 +219,45 @@ async def handle_event(request: Request):
         
         job_service.update_progress(job_id, 20, "processing", "File downloaded. Parsing Mbox...")
         
+        # Define Extraction Path
+        # Format: Hopper/gmail/extract_<zip_name>
+        mbox_name = os.path.basename(name).replace('.mbox', '')
+        extract_path = f"Hopper/gmail/extract_{mbox_name}"
+        
+        # Initialize Logger
+        bucket_obj = storage_client.bucket(bucket)
+        log_path = f"{extract_path}/processing_log.json"
+        
+        proc_logger = DriveLogger(bucket_obj, log_path)
+        
+        # Initialize Processor
+        processor = EmailProcessor(bucket_obj, extract_path, proc_logger)
+        
         # Parse Mbox
         mbox = mailbox.mbox(temp_file)
-        total_messages = len(mbox) # This can be slow for huge files, maybe skip or estimate
+        total_messages = len(mbox)
         logger.info(f"Mbox contains {total_messages} messages")
         
-        processed = 0
-        extracted_count = 0
+        processed_count = 0
         
         for message in mbox:
-            processed += 1
-            if processed % 100 == 0:
-                progress = 20 + int((processed / total_messages) * 60)
-                job_service.update_progress(job_id, progress, "processing", f"Scanned {processed} emails...")
+            processed_count += 1
+            if processed_count % 100 == 0:
+                progress = 20 + int((processed_count / total_messages) * 70) 
+                job_service.update_progress(job_id, progress, "processing", f"Processed {processed_count}/{total_messages} emails...")
+                proc_logger.save()
 
-            subject = message.get('subject', '')
-            
-            # Simple Heuristic Filter
-            if any(keyword in subject.lower() for keyword in ['receipt', 'order', 'invoice', 'confirmation']):
-                body = extract_body(message)
-                if body:
-                    extracted_count += 1
-                    
-                    # Create Artifact
-                    safe_subject = "".join(x for x in subject if x.isalnum() or x in "._- ")[:50]
-                    artifact_name = f"Hopper/Gmail/{job_id}_{processed}_{safe_subject}.html"
-                    
-                    # Upload to GCS (Triggers ingest-shard)
-                    artifact_blob = storage_client.bucket(bucket).blob(artifact_name)
-                    artifact_blob.upload_from_string(body, content_type='text/html')
-                    
-                    logger.info(f"Uploaded artifact: {artifact_name}")
+            # Process Message
+            processor.process_message(message)
         
-        job_service.update_progress(job_id, 90, "processing", f"Extraction complete. Found {extracted_count} candidates. Cleaning up...")
+        # Final Log Save
+        proc_logger.save()
+        
+        job_service.update_progress(job_id, 90, "processing", f"Extraction complete. Processed {processed_count} emails.")
         
         # Cleanup GCS File (Zero Retention)
         blob.delete()
-        job_service.update_progress(job_id, 100, "completed", "Job complete. Source file deleted.")
+        job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and deleted.")
 
     except Exception as e:
         logger.error(f"Job failed: {e}", exc_info=True)
