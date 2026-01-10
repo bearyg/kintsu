@@ -31,8 +31,10 @@ export class DriveService {
           try {
             await gapi.client.init({
               apiKey: apiKey,
-              discoveryDocs: [DISCOVERY_DOC],
+              // discoveryDocs: [DISCOVERY_DOC], // Removed due to 502 errors
             });
+            // Load Drive API explicitly
+            await gapi.client.load('drive', 'v3');
             break; // Success
           } catch (e: any) {
             console.warn(`GAPI Init failed, retrying... (${retries} left)`, e);
