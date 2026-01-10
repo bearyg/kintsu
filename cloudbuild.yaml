@@ -69,6 +69,24 @@ steps:
         --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest || true
     waitFor: ['-']
 
+  # 6. Deploy Daily Cleanup Function
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cleanup'
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |
+      gcloud functions deploy kintsu-cleanup-daily${_SUFFIX} \
+        --gen2 \
+        --runtime=python310 \
+        --region=us-central1 \
+        --source=./functions/cleanup-daily \
+        --entry-point=cleanup \
+        --trigger-http \
+        --allow-unauthenticated \
+        --service-account=351476623210-compute@developer.gserviceaccount.com || true
+    waitFor: ['-']
+
   # 6. Deploy Mbox Worker (Cloud Run)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-worker-mbox'
