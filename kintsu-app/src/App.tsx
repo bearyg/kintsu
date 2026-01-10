@@ -378,7 +378,7 @@ function App() {
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-10 text-center">
           <img src="/kintsu-icon.jpeg" alt="Kintsu" className="w-20 h-20 rounded-2xl mx-auto mb-6 shadow-md" />
           <h1 className="text-3xl font-bold text-[#0F172A] mb-2">Welcome to Kintsu</h1>
-          <p className="text-xs font-mono text-slate-400 mb-6">Version_0_0_1l</p>
+          <p className="text-xs font-mono text-slate-400 mb-6">Version_0_0_1l ({import.meta.env.VITE_COMMIT_HASH || 'local'})</p>
           <p className="text-slate-500 mb-8">
             Your private forensic recovery workspace.
             Connect your Google Drive to begin building your Hopper.

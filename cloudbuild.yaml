@@ -147,7 +147,7 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'echo "VITE_GOOGLE_API_KEY=$$FRONTEND_KEY" > .env'
+      - 'echo "VITE_GOOGLE_API_KEY=$$FRONTEND_KEY" > .env; echo "VITE_COMMIT_HASH=$SHORT_SHA" >> .env'
     secretEnv: ['FRONTEND_KEY']
     waitFor: ['-']
 
