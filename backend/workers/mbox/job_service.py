@@ -13,7 +13,7 @@ class JobService:
         self.bucket_name = bucket_name
         self.bucket = storage_client.bucket(bucket_name)
 
-    def create_job(self, user_id: str, file_name: str, debug_mode: bool = False) -> dict:
+    def create_job(self, user_id: str, file_name: str, auth_token: str = None, folder_id: str = None, debug_mode: bool = False) -> dict:
         """
         Creates a new job record and generates a signed URL for file upload.
         """
@@ -28,6 +28,8 @@ class JobService:
             "fileName": file_name,
             "gcsPath": f"gs://{self.bucket_name}/{blob_name}",
             "debugMode": debug_mode,
+            "authToken": auth_token,  # Store for worker to use
+            "folderId": folder_id,    # Target Drive Folder
             "progress": 0,
             "logs": [],
             "createdAt": firestore.SERVER_TIMESTAMP,
@@ -37,12 +39,32 @@ class JobService:
         db.collection("jobs").document(job_id).set(job_data)
         
         # Generate Signed URL (valid for 15 minutes)
+        # Use Impersonated Credentials to sign via IAM API (fixes "no private key" on Cloud Run)
+        import google.auth
+        from google.auth import impersonated_credentials
+        from google.auth.transport.requests import Request
+
+        source_credentials, project = google.auth.default()
+        target_principal = "351476623210-compute@developer.gserviceaccount.com"
+        
+        # Create impersonated credentials (self-impersonation to get signing capability)
+        creds = impersonated_credentials.Credentials(
+            source_credentials=source_credentials,
+            target_principal=target_principal,
+            target_scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            lifetime=3600
+        )
+        
+        # Refresh to ensure token is valid
+        creds.refresh(Request())
+
         blob = self.bucket.blob(blob_name)
         url = blob.generate_signed_url(
             version="v4",
             expiration=timedelta(minutes=15),
             method="PUT",
-            content_type="application/octet-stream" 
+            content_type="application/octet-stream",
+            credentials=creds
         )
         
         return {
