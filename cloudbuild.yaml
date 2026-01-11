@@ -153,7 +153,7 @@ steps:
         
         echo "VITE_GOOGLE_API_KEY=$$FRONTEND_KEY" > .env
         echo "VITE_COMMIT_HASH=$SHORT_SHA" >> .env
-        echo "VITE_API_BASE=$BACKEND_URL" >> .env
+        echo "VITE_API_BASE=$$BACKEND_URL" >> .env
         
         echo "Generated .env configuration:"
         cat .env
