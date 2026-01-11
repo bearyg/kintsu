@@ -24,6 +24,13 @@ export const TakeoutWizard = ({ userId }: { userId: string }) => {
     const file = e.target.files[0];
     setUploading(true);
 
+    // Check Auth
+    if (!DriveService.accessToken) {
+      setStatus('Error: Authentication token missing. Please refresh and sign in again.');
+      setUploading(false);
+      return;
+    }
+
     try {
       // 1. Create Job
       const res = await fetch(`${API_BASE}/api/jobs/create`, {
