@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { DriveService } from '../DriveService'; // Import auth service
 
-const API_BASE = "https://kintsu-backend-dev-oft4mhfkua-uc.a.run.app";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://kintsu-backend-dev-oft4mhfkua-uc.a.run.app";
 
 export const TakeoutWizard = ({ userId }: { userId: string }) => {
   const [step, setStep] = useState(1);

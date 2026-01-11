@@ -140,16 +140,25 @@ steps:
     args: ['install']
     waitFor: ['-']
 
-  # 9. Create Env File
-  - name: 'bash'
+  # 9. Create Env File (Dynamic Configuration)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'env-frontend'
     dir: 'kintsu-app'
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'echo "VITE_GOOGLE_API_KEY=$$FRONTEND_KEY" > .env; echo "VITE_COMMIT_HASH=$SHORT_SHA" >> .env'
+      - |
+        echo "Fetching Backend URL for kintsu-backend${_SUFFIX}..."
+        BACKEND_URL=$(gcloud run services describe kintsu-backend${_SUFFIX} --region=us-central1 --format='value(status.url)') || echo "http://localhost:8000"
+        
+        echo "VITE_GOOGLE_API_KEY=$$FRONTEND_KEY" > .env
+        echo "VITE_COMMIT_HASH=$SHORT_SHA" >> .env
+        echo "VITE_API_BASE=$BACKEND_URL" >> .env
+        
+        echo "Generated .env configuration:"
+        cat .env
     secretEnv: ['FRONTEND_KEY']
-    waitFor: ['-']
+    waitFor: ['deploy-backend']
 
   # 10. Build Frontend
   - name: 'node:22'
