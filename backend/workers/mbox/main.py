@@ -210,6 +210,27 @@ async def handle_event(request: Request):
     logger.info(f"Processing Job {job_id} for User {user_id}")
     job_service.update_progress(job_id, 10, "processing", "Worker started. Downloading file...")
 
+    # Fetch Job Details (to get Auth Token)
+    job_doc = db.collection("jobs").document(job_id).get()
+    auth_token = None
+    if job_doc.exists:
+        auth_token = job_doc.to_dict().get('authToken')
+    
+    drive_uploader = None
+    target_folder_id = None
+    
+    if auth_token:
+        try:
+            from drive_uploader import DriveUploader
+            drive_uploader = DriveUploader(auth_token)
+            # Ensure Path: Kintsu -> Hopper -> Gmail
+            target_folder_id = drive_uploader.ensure_path(['Kintsu', 'Hopper', 'Gmail'])
+            logger.info(f"Drive Upload configured. Target Folder: {target_folder_id}")
+        except Exception as e:
+            logger.error(f"Failed to configure Drive Uploader: {e}")
+    else:
+        logger.warning("No Auth Token found in job. Results will NOT be uploaded to Drive.")
+
     temp_file = None
     try:
         # Download file
@@ -248,7 +269,26 @@ async def handle_event(request: Request):
                 proc_logger.save()
 
             # Process Message
-            processor.process_message(message)
+            result_name = processor.process_message(message)
+            
+            # Post-Process: Upload to Drive if configured
+            if result_name and drive_uploader and target_folder_id:
+                try:
+                    # Upload HTML
+                    html_blob = bucket_obj.blob(f"{extract_path}/{result_name}.html")
+                    if html_blob.exists():
+                        html_content = html_blob.download_as_text()
+                        drive_uploader.upload_file(f"{result_name}.html", html_content, "text/html", target_folder_id)
+                    
+                    # Upload JSON (Inventory)
+                    json_blob = bucket_obj.blob(f"{extract_path}/{result_name}.json")
+                    if json_blob.exists():
+                        json_content = json_blob.download_as_text()
+                        drive_uploader.upload_file(f"{result_name}.json", json_content, "application/json", target_folder_id)
+                        
+                except Exception as up_err:
+                    logger.error(f"Failed to upload result {result_name} to Drive: {up_err}")
+
         
         # Final Log Save
         proc_logger.save()
@@ -257,7 +297,7 @@ async def handle_event(request: Request):
         
         # Cleanup GCS File (Zero Retention)
         blob.delete()
-        job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and deleted.")
+        job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and uploaded to Drive.")
 
     except Exception as e:
         logger.error(f"Job failed: {e}", exc_info=True)
