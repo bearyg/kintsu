@@ -1,7 +1,7 @@
 {
   "name": "kintsu-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1q",
   "type": "module",
   "scripts": {
     "dev": "vite",

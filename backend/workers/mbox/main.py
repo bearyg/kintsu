@@ -48,8 +48,8 @@ class EmailProcessor:
         # Idempotency Check (Check if EML exists)
         blob = self.bucket.blob(eml_path_rel)
         if blob.exists():
-            self.logger.log_event("skipped", msg_id, "Duplicate file exists")
-            return None
+            self.logger.log_event("skipped", msg_id, "Duplicate file exists (reusing)")
+            return safe_name
 
         try:
             # 1. Save EML (Binary)
@@ -274,17 +274,30 @@ async def handle_event(request: Request):
             # Post-Process: Upload to Drive if configured
             if result_name and drive_uploader and target_folder_id:
                 try:
+                    # Upload EML (Raw)
+                    eml_blob = bucket_obj.blob(f"{extract_path}/{result_name}.eml")
+                    if eml_blob.exists():
+                         eml_content = eml_blob.download_as_string()
+                         drive_uploader.upload_file(f"{result_name}.eml", eml_content, "message/rfc822", target_folder_id)
+                         eml_blob.delete() # Cleanup immediately
+
                     # Upload HTML
                     html_blob = bucket_obj.blob(f"{extract_path}/{result_name}.html")
                     if html_blob.exists():
                         html_content = html_blob.download_as_text()
                         drive_uploader.upload_file(f"{result_name}.html", html_content, "text/html", target_folder_id)
+                        html_blob.delete() # Cleanup immediately
                     
                     # Upload JSON (Inventory)
                     json_blob = bucket_obj.blob(f"{extract_path}/{result_name}.json")
                     if json_blob.exists():
                         json_content = json_blob.download_as_text()
                         drive_uploader.upload_file(f"{result_name}.json", json_content, "application/json", target_folder_id)
+                        json_blob.delete() # Cleanup immediately
+                        
+                except Exception as up_err:
+                    logger.error(f"Failed to upload result {result_name} to Drive: {up_err}")
+                    # If upload fails, we keep the file for debugging (or fallback cleanup)
                         
                 except Exception as up_err:
                     logger.error(f"Failed to upload result {result_name} to Drive: {up_err}")
@@ -293,10 +306,30 @@ async def handle_event(request: Request):
         # Final Log Save
         proc_logger.save()
         
+        # Upload Log to Drive
+        if drive_uploader and target_folder_id:
+             try:
+                 log_blob = bucket_obj.blob(log_path)
+                 if log_blob.exists():
+                     log_content = log_blob.download_as_text()
+                     drive_uploader.upload_file("processing_log.json", log_content, "application/json", target_folder_id)
+             except Exception as log_up_err:
+                 logger.error(f"Failed to upload processing_log.json: {log_up_err}")
+
         job_service.update_progress(job_id, 90, "processing", f"Extraction complete. Processed {processed_count} emails.")
         
-        # Cleanup GCS File (Zero Retention)
+        # Cleanup GCS Source File (Zero Retention)
         blob.delete()
+        
+        # Cleanup GCS Extracted Folder (Temp Artifacts)
+        try:
+            blobs_to_delete = storage_client.bucket(bucket).list_blobs(prefix=extract_path)
+            for b in blobs_to_delete:
+                b.delete()
+            logger.info(f"Cleaned up temporary GCS artifacts in {extract_path}")
+        except Exception as cleanup_err:
+            logger.error(f"Failed to cleanup GCS artifacts: {cleanup_err}")
+
         job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and uploaded to Drive.")
 
     except Exception as e:
