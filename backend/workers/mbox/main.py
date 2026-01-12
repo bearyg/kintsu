@@ -12,6 +12,7 @@ from utils import sanitize_filename
 from logger import DriveLogger
 from google import genai
 from google.genai import types
+from google.api_core.exceptions import NotFound
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -225,10 +226,18 @@ async def handle_event(request: Request):
     job_service.update_progress(job_id, 10, "processing", "Worker started. Downloading file...", stage="extracting")
 
     # Fetch Job Details (to get Auth Token)
-    job_doc = db.collection("jobs").document(job_id).get()
-    auth_token = None
-    if job_doc.exists:
-        auth_token = job_doc.to_dict().get('authToken')
+    job_doc_snap = db.collection("jobs").document(job_id).get()
+    
+    # Race Condition Check 1: Job Status
+    if job_doc_snap.exists:
+        job_data = job_doc_snap.to_dict()
+        if job_data.get('status') == 'completed':
+            logger.info(f"Job {job_id} already completed. Ignoring duplicate event.")
+            return {"status": "ignored"}
+        auth_token = job_data.get('authToken')
+    else:
+        logger.warning(f"Job {job_id} not found in Firestore.")
+        auth_token = None
     
     drive_uploader = None
     target_folder_id = None
@@ -250,7 +259,13 @@ async def handle_event(request: Request):
         # Download file
         blob = storage_client.bucket(bucket).blob(name)
         _, temp_file = tempfile.mkstemp()
-        blob.download_to_filename(temp_file)
+        try:
+            blob.download_to_filename(temp_file)
+        except NotFound:
+            # Race Condition Check 2: File Missing (Already Picked Up)
+            logger.warning(f"File {name} not found. Assuming handled by another worker.")
+            job_service.update_progress(job_id, 0, "ignored", "Duplicate trigger: File missing.")
+            return {"status": "ignored"}
         
         job_service.update_progress(job_id, 20, "processing", "File downloaded. Parsing Mbox...", stage="extracting")
         
@@ -333,7 +348,12 @@ async def handle_event(request: Request):
         job_service.update_progress(job_id, 90, "processing", f"Extraction complete. Processed {processed_count} emails.", stage="uploading")
         
         # Cleanup GCS Source File (Zero Retention)
-        blob.delete()
+        try:
+            blob.delete()
+        except NotFound:
+            logger.info("Source file already deleted (clean).")
+        except Exception as e:
+            logger.warning(f"Failed to delete source file: {e}")
         
         # Cleanup GCS Extracted Folder (Temp Artifacts)
         try:
