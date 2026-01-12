@@ -70,6 +70,13 @@ def handle_zip_archive(bucket, blob):
                 
     except Exception as e:
         print(f"Error processing zip {blob.name}: {e}")
+    else:
+        # Only delete if no exception occurred
+        print(f"Extraction complete. Deleting source zip: {blob.name}")
+        try:
+            blob.delete()
+        except Exception as e:
+            print(f"Failed to delete source zip {blob.name}: {e}")
 
 def extract_data_with_gemini(blob, mime_type):
     """
@@ -131,6 +138,14 @@ def extract_data_with_gemini(blob, mime_type):
     finally:
         if os.path.exists(temp_local_filename):
             os.remove(temp_local_filename)
+        
+        # 4. Cleanup Gemini File
+        if 'gemini_file' in locals() and gemini_file:
+            try:
+                print(f"Deleting Gemini file: {gemini_file.name}")
+                client.files.delete(name=gemini_file.name)
+            except Exception as e:
+                print(f"Failed to delete Gemini file: {e}")
 
 @functions_framework.cloud_event
 def process_new_shard(cloud_event):
@@ -228,6 +243,13 @@ def process_new_shard(cloud_event):
                     "refinedAt": firestore.SERVER_TIMESTAMP
                 })
                 print(f"Shard {shard_id} refined (BYOS Mode).")
+
+                # 4. Cleanup Source Blob
+                try:
+                    print(f"Cleanup: Deleting processed shard {file_name}")
+                    blob.delete()
+                except Exception as e:
+                    print(f"Failed to delete processed shard {file_name}: {e}")
 
             except Exception as e:
                 print(f"BYOS/Drive Error: {e}")
