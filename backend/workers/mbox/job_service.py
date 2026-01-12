@@ -79,9 +79,9 @@ class JobService:
             return doc.to_dict()
         return None
 
-    def update_progress(self, job_id: str, progress: int, status: str = None, log_message: str = None):
+    def update_progress(self, job_id: str, progress: int, status: str = None, log_message: str = None, stage: str = None):
         """
-        Updates the job progress and optionally status/logs.
+        Updates the job progress and optionally status/logs/stage.
         """
         update_data = {
             "progress": progress,
@@ -90,6 +90,9 @@ class JobService:
         
         if status:
             update_data["status"] = status
+            
+        if stage:
+            update_data["stage"] = stage
             
         if log_message:
             # Atomic array union for logs

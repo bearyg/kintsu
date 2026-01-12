@@ -71,19 +71,85 @@ export const TakeoutWizard = ({ userId }: { userId: string }) => {
   };
 
   if (step === 4) {
-    return (
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center">
-        <h3 className="text-xl font-bold mb-4">Processing Your Archive</h3>
-        <div className="w-full bg-slate-100 rounded-full h-4 mb-4">
-          <div className="bg-[#D4AF37] h-4 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
-        </div>
-        <p className="text-slate-500">{status} ({progress}%)</p>
+    const isComplete = progress === 100;
 
-        {progress === 100 && (
-          <div className="mt-6 flex flex-col items-center gap-2 text-green-600">
-            <CheckCircle className="w-8 h-8" />
-            <span className="font-bold">Complete! Your emails are in the Hopper.</span>
-            <button onClick={() => setStep(1)} className="mt-4 text-slate-400 text-sm hover:underline">Start Over</button>
+    // Determine current visual step based on "stage" or fallback to progress
+    // Stages: extracting -> analyzing -> uploading -> complete
+    let currentStage = 1;
+    if (status.toLowerCase().includes('analyzing') || status.toLowerCase().includes('analysis')) currentStage = 2;
+    if (status.toLowerCase().includes('uploading') || status.toLowerCase().includes('drive')) currentStage = 3;
+    if (isComplete) currentStage = 4;
+
+    // Use "message" from backend if available, or build a friendly one
+    // Fallback status logic to avoid "failed (0%)" on start
+    const displayStatus = (status === 'failed' || status === 'error')
+      ? 'Failed'
+      : (status === 'processing' && progress === 0)
+        ? 'Initializing...'
+        : status;
+
+    return (
+      <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+        <h3 className="text-xl font-bold mb-6 text-center text-[#0F172A]">
+          {isComplete ? 'Archive Processed' : 'Processing Archive'}
+        </h3>
+
+        {/* 3-Step Progress Visualization */}
+        <div className="flex items-center justify-between mb-8 relative">
+          <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-100 -z-10" />
+
+          {['Extract Zip', 'AI Analysis', 'Save to Hopper'].map((label, idx) => {
+            const stepNum = idx + 1;
+            const isActive = stepNum === currentStage;
+            const isDone = stepNum < currentStage || isComplete;
+
+            return (
+              <div key={label} className="flex flex-col items-center gap-2 bg-white px-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${isActive ? 'bg-[#D4AF37] text-white shadow-lg scale-110' :
+                    isDone ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-400'
+                  }`}>
+                  {isDone ? <CheckCircle className="w-5 h-5" /> : stepNum}
+                </div>
+                <span className={`text-xs font-medium ${isActive ? 'text-[#0F172A]' : 'text-slate-400'}`}>
+                  {label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Granular Status Message */}
+        <div className="bg-slate-50 rounded-lg p-4 mb-4 text-center">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            {!isComplete && <Loader2 className="w-5 h-5 animate-spin text-[#D4AF37]" />}
+            <span className="font-mono text-sm text-slate-700 font-medium">
+              {displayStatus}
+            </span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-[#D4AF37] h-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="text-right mt-1">
+            <span className="text-xs text-slate-400 font-mono">{progress}%</span>
+          </div>
+        </div>
+
+        {isComplete && (
+          <div className="mt-6 flex flex-col items-center gap-3 text-green-600 animate-in fade-in slide-in-from-bottom-4">
+            <div className="flex items-center gap-2 font-bold text-lg">
+              <CheckCircle className="w-6 h-6" />
+              <span>Success!</span>
+            </div>
+            <p className="text-slate-600 text-sm">Your emails have been processed and are now in the Hopper.</p>
+            <button
+              onClick={() => setStep(1)}
+              className="mt-2 text-slate-400 text-xs hover:text-[#D4AF37] underline transition-colors"
+            >
+              Process Another Archive
+            </button>
           </div>
         )}
       </div>

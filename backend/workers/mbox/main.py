@@ -208,7 +208,8 @@ async def handle_event(request: Request):
         return {"status": "ignored"}
     
     logger.info(f"Processing Job {job_id} for User {user_id}")
-    job_service.update_progress(job_id, 10, "processing", "Worker started. Downloading file...")
+    logger.info(f"Processing Job {job_id} for User {user_id}")
+    job_service.update_progress(job_id, 10, "processing", "Worker started. Downloading file...", stage="extracting")
 
     # Fetch Job Details (to get Auth Token)
     job_doc = db.collection("jobs").document(job_id).get()
@@ -238,7 +239,7 @@ async def handle_event(request: Request):
         _, temp_file = tempfile.mkstemp()
         blob.download_to_filename(temp_file)
         
-        job_service.update_progress(job_id, 20, "processing", "File downloaded. Parsing Mbox...")
+        job_service.update_progress(job_id, 20, "processing", "File downloaded. Parsing Mbox...", stage="extracting")
         
         # Define Extraction Path
         # Format: Hopper/gmail/extract_<zip_name>
@@ -265,7 +266,7 @@ async def handle_event(request: Request):
             processed_count += 1
             if processed_count % 100 == 0:
                 progress = 20 + int((processed_count / total_messages) * 70) 
-                job_service.update_progress(job_id, progress, "processing", f"Processed {processed_count}/{total_messages} emails...")
+                job_service.update_progress(job_id, progress, "processing", f"Analysis: {processed_count}/{total_messages} emails processed...", stage="analyzing")
                 proc_logger.save()
 
             # Process Message
@@ -316,7 +317,7 @@ async def handle_event(request: Request):
              except Exception as log_up_err:
                  logger.error(f"Failed to upload processing_log.json: {log_up_err}")
 
-        job_service.update_progress(job_id, 90, "processing", f"Extraction complete. Processed {processed_count} emails.")
+        job_service.update_progress(job_id, 90, "processing", f"Extraction complete. Processed {processed_count} emails.", stage="uploading")
         
         # Cleanup GCS Source File (Zero Retention)
         blob.delete()
@@ -330,7 +331,7 @@ async def handle_event(request: Request):
         except Exception as cleanup_err:
             logger.error(f"Failed to cleanup GCS artifacts: {cleanup_err}")
 
-        job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and uploaded to Drive.")
+        job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and uploaded to Drive.", stage="complete")
 
     except Exception as e:
         logger.error(f"Job failed: {e}", exc_info=True)
