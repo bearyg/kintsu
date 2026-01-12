@@ -148,6 +148,19 @@ class EmailProcessor:
                  body = message.get_payload(decode=True).decode('utf-8', errors='replace')
              except:
                  pass
+        if body and "<html" not in body.lower():
+            # Wrap fragment in HTML5 boilerplate
+            body = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Email Preview</title>
+<style>body {{ font-family: sans-serif; padding: 20px; }}</style>
+</head>
+<body>
+{body}
+</body>
+</html>"""
         return body
 
 @app.post("/")
