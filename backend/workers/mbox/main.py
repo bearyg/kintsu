@@ -365,6 +365,13 @@ async def handle_event(request: Request):
             logger.error(f"Failed to cleanup GCS artifacts: {cleanup_err}")
 
         job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and uploaded to Drive.", stage="complete")
+        
+        # Cleanup Firestore Job Record (Strict Cleanup)
+        try:
+            db.collection("jobs").document(job_id).delete()
+            logger.info(f"Cleanup: Job {job_id} deleted from Firestore.")
+        except Exception as e:
+            logger.error(f"Failed to delete job {job_id}: {e}")
 
     except Exception as e:
         logger.error(f"Job failed: {e}", exc_info=True)

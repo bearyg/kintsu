@@ -179,9 +179,6 @@ function App() {
         await DriveService.init(CLIENT_ID, API_KEY);
         setIsSignedIn(DriveService.isSignedIn);
         if (DriveService.isSignedIn) {
-          // User registration removed for strict scope compliance
-
-
           const kintsuId = await DriveService.findFolder('Kintsu');
           if (kintsuId) {
             const hopperId = await DriveService.findFolder('Hopper', kintsuId);
@@ -190,6 +187,9 @@ function App() {
               setBreadcrumbs([{ id: hopperId, name: 'Hopper' }]);
             }
           }
+
+          // Initial Fetch of Refinery Stream (from Drive)
+          refreshRefineryStream();
         }
       } catch (error) {
         console.error("Failed to init Drive:", error);
@@ -198,19 +198,30 @@ function App() {
       }
     };
     initApp();
-
-    const q = query(collection(db, "shards"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newShards = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Shard[];
-      setShards(newShards);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
   }, []);
+
+  const refreshRefineryStream = async () => {
+    if (!DriveService.isSignedIn) return;
+    setLoading(true);
+    try {
+      const files = await DriveService.listRefinedFiles();
+      // Map Drive files to Shard interface
+      const driveShards: Shard[] = files.map(f => ({
+        id: f.id,
+        fileName: f.name,
+        sourceType: f.sourceType || 'Unknown',
+        status: 'refined', // Assume anything in Hopper is "processed"
+        driveFileId: f.id,
+        webViewLink: f.webViewLink,
+        createdAt: Timestamp.now() // Estimate or use createdTime if we ask for it
+      }));
+      setShards(driveShards);
+    } catch (e) {
+      console.error("Failed to refresh stream:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch Drive Items when folder changes
   useEffect(() => {

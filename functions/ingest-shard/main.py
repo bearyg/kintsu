@@ -181,28 +181,28 @@ def process_new_shard(cloud_event):
         elif len(parts) > 2:
             source_type = parts[1]
 
-    # 3. Create Initial Shard Record
-    shard_id = f"{source_type}_{blob.generation}"
+    # 3. Create Initial Shard Record (DEPRECATED: Shards are not used, we read from Drive directly)
+    # shard_id = f"{source_type}_{blob.generation}"
     
-    shard_data = {
-        "id": shard_id,
-        "sourceType": source_type,
-        "filePath": file_name,
-        "fileName": os.path.basename(file_name),
-        "status": "unprocessed",
-        "size": blob.size,
-        "contentType": blob.content_type,
-        "createdAt": firestore.SERVER_TIMESTAMP
-    }
+    # shard_data = {
+    #     "id": shard_id,
+    #     "sourceType": source_type,
+    #     "filePath": file_name,
+    #     "fileName": os.path.basename(file_name),
+    #     "status": "unprocessed",
+    #     "size": blob.size,
+    #     "contentType": blob.content_type,
+    #     "createdAt": firestore.SERVER_TIMESTAMP
+    # }
 
-    db.collection("shards").document(shard_id).set(shard_data)
-    print(f"Shard {shard_id} indexed. Source: {source_type}")
+    # db.collection("shards").document(shard_id).set(shard_data)
+    # print(f"Shard {shard_id} indexed. Source: {source_type}")
 
     # 4. AI Extraction (The Refinery)
     supported_types = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
     
     if blob.content_type in supported_types and GEMINI_API_KEY:
-        print(f"Refining shard {shard_id}...")
+        # print(f"Refining shard {shard_id}...")
         extracted_data = extract_data_with_gemini(blob, blob.content_type)
         
         if extracted_data:
@@ -236,13 +236,13 @@ def process_new_shard(cloud_event):
                 aggregator = InventoryAggregator(drive_adapter)
                 aggregator.append_item(kintsu_folder_id, extracted_data, os.path.basename(file_name))
 
-                # 3. Update Firestore (Status Only)
-                db.collection("shards").document(shard_id).update({
-                    "status": "refined",
-                    "driveFileId": new_file.get('id'),
-                    "refinedAt": firestore.SERVER_TIMESTAMP
-                })
-                print(f"Shard {shard_id} refined (BYOS Mode).")
+                # 3. Update Firestore (Status Only) - DEPRECATED
+                # db.collection("shards").document(shard_id).update({
+                #     "status": "refined",
+                #     "driveFileId": new_file.get('id'),
+                #     "refinedAt": firestore.SERVER_TIMESTAMP
+                # })
+                print(f"Shard refined (BYOS Mode).")
 
                 # 4. Cleanup Source Blob
                 try:
@@ -253,15 +253,16 @@ def process_new_shard(cloud_event):
 
             except Exception as e:
                 print(f"BYOS/Drive Error: {e}")
-                db.collection("shards").document(shard_id).update({
-                    "status": "error",
-                    "errorMsg": f"BYOS Error: {str(e)}"
-                })
+                # db.collection("shards").document(shard_id).update({
+                #     "status": "error",
+                #     "errorMsg": f"BYOS Error: {str(e)}"
+                # })
 
         else:
-             db.collection("shards").document(shard_id).update({
-                "status": "error",
-                "errorMsg": "Gemini extraction failed"
-            })
+             # db.collection("shards").document(shard_id).update({
+             #    "status": "error",
+             #    "errorMsg": "Gemini extraction failed"
+             # })
+            pass
     else:
         print(f"Skipping refinement for {blob.content_type}")

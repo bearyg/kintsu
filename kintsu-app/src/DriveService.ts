@@ -348,52 +348,29 @@ export class DriveService {
 
       console.log(`Found Hopper ID: ${hopperId}`);
 
-      // Recursive Walker
-      const allFiles: any[] = [];
-      const _this = this; // Capture static context
+      // List all folders in Hopper to find source-specific subfolders (e.g. Gmail, Amazon)
+      const subfolders = await this.listChildren(hopperId);
+      let allFiles: any[] = [];
 
-      async function walk(folderId: string, folderName: string, depth: number = 0) {
-        console.log(`[Scan] Walking ${folderName} (${folderId}), depth ${depth}`);
-        if (depth > 4) return;
-
-        try {
-          const params = new URLSearchParams({
-            q: `'${folderId}' in parents and trashed=false`,
-            fields: 'files(id, name, mimeType)',
-            pageSize: '100'
-          });
-
-          const response = await _this._fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`);
-          const data = await response.json();
-          const items = data.files || [];
-
-          console.log(`[Scan] Found ${items.length} items in ${folderName}`);
-
-          for (const item of items) {
-            // Log every item seen
-            console.log(`[Scan] Item: ${item.name} (${item.mimeType})`);
-
-            if (item.mimeType === 'application/vnd.google-apps.folder') {
-              await walk(item.id, item.name, depth + 1);
-            } else {
-              // It's a file
-              console.log(`[Scan] >>> Candidate File: ${item.name}`);
-              allFiles.push({ ...item, sourceType: folderName });
-            }
-          }
-        } catch (err) {
-          console.error(`[Scan] Error walking ${folderName}:`, err);
+      for (const item of subfolders) {
+        if (item.mimeType === 'application/vnd.google-apps.folder') {
+          // Fetch files from subfolder
+          const folderFiles = await this.listChildren(item.id);
+          // Tag them with source type
+          const taggedFiles = folderFiles.map(f => ({ ...f, sourceType: item.name }));
+          allFiles = [...allFiles, ...taggedFiles];
         }
       }
-
-      // Start scan at Hopper
-      await walk(hopperId, 'Hopper');
-      console.log(`[Scan] Complete. Total candidates: ${allFiles.length}`);
       return allFiles;
-
     } catch (e) {
-      console.error("List files error:", e);
+      console.error("List Hopper files error:", e);
       return [];
     }
   }
+
+  static async listRefinedFiles(): Promise<any[]> {
+    // For now, this is effectively the same as listHopperFiles but focused on consumption
+    return await this.listHopperFiles();
+  }
+
 }
