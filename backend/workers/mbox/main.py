@@ -110,7 +110,7 @@ class EmailProcessor:
             """
             
             response = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-2.5-pro",
                 contents=[prompt, email_body],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json"

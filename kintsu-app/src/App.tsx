@@ -525,12 +525,12 @@ function App() {
                   return (
                     <div
                       key={item.id}
-                      onClick={() => isFolder ? handleNavigate(item.id, item.name) : null}
+                      onClick={() => isFolder ? handleNavigate(item.id, item.name) : window.open(item.webViewLink, '_blank')}
                       className={cn(
                         "p-4 rounded-lg border flex flex-col items-center justify-center gap-3 text-center transition-all group",
                         isFolder
                           ? "cursor-pointer hover:border-[#D4AF37] hover:bg-orange-50/10 border-slate-200"
-                          : "border-slate-100 bg-slate-50 opacity-75"
+                          : "cursor-pointer hover:border-blue-300 hover:bg-blue-50/10 border-slate-100 bg-slate-50 opacity-75"
                       )}
                     >
                       {isFolder
@@ -549,32 +549,40 @@ function App() {
 
           {/* Browser Footer (Actions) */}
           <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-center">
-            <label
-              className={cn(
-                "inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer",
-                !isUploading
-                  ? "bg-[#0F172A] text-white hover:bg-slate-800"
-                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
-              )}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-4 h-4" />
-                  Upload File Here
-                </>
-              )}
-              <input
-                type="file"
-                className="hidden"
-                disabled={isUploading}
-                onChange={handleFileUpload}
-              />
-            </label>
+            {/* 1. Root Upload Restriction: Only show if breadcrumbs > 1 (i.e., inside a subfolder, not root Hopper) */}
+            {breadcrumbs.length > 1 ? (
+              <label
+                className={cn(
+                  "inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer",
+                  !isUploading
+                    ? "bg-[#0F172A] text-white hover:bg-slate-800"
+                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                )}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4" />
+                    Upload File Here
+                  </>
+                )}
+                <input
+                  type="file"
+                  className="hidden"
+                  disabled={isUploading}
+                  onChange={handleFileUpload}
+                />
+              </label>
+            ) : (
+              <div className="text-sm text-slate-400 flex items-center gap-2 italic">
+                <Lock className="w-4 h-4" />
+                Open a folder above to upload files
+              </div>
+            )}
           </div>
         </div>
 

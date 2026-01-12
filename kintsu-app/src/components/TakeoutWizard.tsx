@@ -58,7 +58,7 @@ export const TakeoutWizard = ({ userId }: { userId: string }) => {
         const data = doc.data();
         if (data) {
           setProgress(data.progress || 0);
-          setStatus(data.status || 'processing');
+          setStatus(data.message || data.status || 'processing');
         }
       });
 

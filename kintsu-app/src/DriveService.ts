@@ -317,7 +317,7 @@ export class DriveService {
     try {
       const params = new URLSearchParams({
         q: `'${folderId}' in parents and trashed=false`,
-        fields: 'files(id, name, mimeType)',
+        fields: 'files(id, name, mimeType, webViewLink)',
         pageSize: '100',
         orderBy: 'folder,name'
       });
