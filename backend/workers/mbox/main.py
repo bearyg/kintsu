@@ -69,6 +69,9 @@ class EmailProcessor:
             self.logger.log_event("error", msg_id, str(e))
             return None
 
+
+    def extract_inventory(self, email_body, base_name):
+        """Uses Gemini 2.5-Pro to extract inventory data."""
         # Reverted to API Key as per reference implementation (geminiService.js)
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
