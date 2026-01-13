@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { Timestamp } from 'firebase/firestore';
 import { DriveService } from './DriveService';
 import { TakeoutWizard } from './components/TakeoutWizard';
 
@@ -29,6 +28,7 @@ interface Shard {
   sourceType: string;
   status: 'unprocessed' | 'refined' | 'error';
   driveFileId?: string;
+  webViewLink?: string;
   createdAt: Timestamp;
 }
 
@@ -62,10 +62,17 @@ const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: strin
     }
   }, [isRefined, shard.driveFileId, data]);
 
+  const handleClick = () => {
+    if (shard.webViewLink) {
+      window.open(shard.webViewLink, '_blank');
+    }
+  };
+
   return (
     <div
+      onClick={handleClick}
       className={cn(
-        "relative overflow-hidden rounded-xl border transition-all p-5 flex gap-5 group bg-white",
+        "relative overflow-hidden rounded-xl border transition-all p-5 flex gap-5 group bg-white cursor-pointer hover:bg-slate-50",
         isRefined
           ? "border-[#D4AF37]/30 shadow-md shadow-orange-100"
           : "border-slate-200 opacity-80"
@@ -85,7 +92,7 @@ const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: strin
 
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start mb-2">
-          <h4 className={cn("font-bold truncate pr-4", isRefined ? "text-slate-900" : "text-slate-500")}>
+          <h4 className={cn("font-bold truncate pr-4 group-hover:text-[#D4AF37] transition-colors", isRefined ? "text-slate-900" : "text-slate-500")}>
             {shard.fileName}
           </h4>
           <span className="text-xs font-mono text-slate-400 shrink-0">

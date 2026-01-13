@@ -111,7 +111,7 @@ class EmailProcessor:
             """
             
             response = client.models.generate_content(
-                model="gemini-2.5-pro",
+                model="gemini-2.5-flash",
                 contents=[prompt, email_body],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json"
@@ -163,6 +163,17 @@ class EmailProcessor:
 </body>
 </html>"""
         return body
+
+def safe_update_progress(job_id, progress, status, message, stage=None):
+    """
+    Wrapper around job_service.update_progress to handle 404s gracefully.
+    """
+    try:
+        job_service.update_progress(job_id, progress, status, message, stage=stage)
+    except NotFound:
+        logger.warning(f"Job {job_id} not found during update (likely completed). suppressing error.")
+    except Exception as e:
+        logger.error(f"Failed to update progress for {job_id}: {e}")
 
 @app.post("/")
 async def handle_event(request: Request):
@@ -222,23 +233,25 @@ async def handle_event(request: Request):
         return {"status": "ignored"}
     
     logger.info(f"Processing Job {job_id} for User {user_id}")
-    logger.info(f"Processing Job {job_id} for User {user_id}")
-    job_service.update_progress(job_id, 10, "processing", "Worker started. Downloading file...", stage="extracting")
 
     # Fetch Job Details (to get Auth Token)
     job_doc_snap = db.collection("jobs").document(job_id).get()
     
-    # Race Condition Check 1: Job Status
-    if job_doc_snap.exists:
-        job_data = job_doc_snap.to_dict()
-        if job_data.get('status') == 'completed':
-            logger.info(f"Job {job_id} already completed. Ignoring duplicate event.")
-            return {"status": "ignored"}
-        auth_token = job_data.get('authToken')
-    else:
-        logger.warning(f"Job {job_id} not found in Firestore.")
-        auth_token = None
+    # 1. Race Condition Check: Job Missing / Already Complete
+    if not job_doc_snap.exists:
+        logger.warning(f"Job {job_id} not found in Firestore. Assuming already handled.")
+        return {"status": "ignored", "reason": "job_orphaned"}
+
+    job_data = job_doc_snap.to_dict()
+    if job_data.get('status') == 'completed':
+        logger.info(f"Job {job_id} already completed. Ignoring duplicate event.")
+        return {"status": "ignored", "reason": "already_completed"}
     
+    auth_token = job_data.get('authToken')
+    
+    # Start Processing (Safe Update)
+    safe_update_progress(job_id, 10, "processing", "Worker started. Downloading file...", stage="extracting")
+
     drive_uploader = None
     target_folder_id = None
     
@@ -264,10 +277,10 @@ async def handle_event(request: Request):
         except NotFound:
             # Race Condition Check 2: File Missing (Already Picked Up)
             logger.warning(f"File {name} not found. Assuming handled by another worker.")
-            job_service.update_progress(job_id, 0, "ignored", "Duplicate trigger: File missing.")
+            safe_update_progress(job_id, 0, "ignored", "Duplicate trigger: File missing.")
             return {"status": "ignored"}
         
-        job_service.update_progress(job_id, 20, "processing", "File downloaded. Parsing Mbox...", stage="extracting")
+        safe_update_progress(job_id, 20, "processing", "File downloaded. Parsing Mbox...", stage="extracting")
         
         # Define Extraction Path
         # Format: Hopper/gmail/extract_<zip_name>
@@ -294,7 +307,7 @@ async def handle_event(request: Request):
             processed_count += 1
             if processed_count % 100 == 0:
                 progress = 20 + int((processed_count / total_messages) * 70) 
-                job_service.update_progress(job_id, progress, "processing", f"Analysis: {processed_count}/{total_messages} emails processed...", stage="analyzing")
+                safe_update_progress(job_id, progress, "processing", f"Analysis: {processed_count}/{total_messages} emails processed...", stage="analyzing")
                 proc_logger.save()
 
             # Process Message
@@ -327,10 +340,6 @@ async def handle_event(request: Request):
                 except Exception as up_err:
                     logger.error(f"Failed to upload result {result_name} to Drive: {up_err}")
                     # If upload fails, we keep the file for debugging (or fallback cleanup)
-                        
-                except Exception as up_err:
-                    logger.error(f"Failed to upload result {result_name} to Drive: {up_err}")
-
         
         # Final Log Save
         proc_logger.save()
@@ -345,8 +354,12 @@ async def handle_event(request: Request):
              except Exception as log_up_err:
                  logger.error(f"Failed to upload processing_log.json: {log_up_err}")
 
-        job_service.update_progress(job_id, 90, "processing", f"Extraction complete. Processed {processed_count} emails.", stage="uploading")
-        
+        # Final Verification
+        if processed_count == total_messages:
+            safe_update_progress(job_id, 90, "processing", f"Extraction complete. processed {processed_count}/{total_messages} emails.", stage="uploading")
+        else:
+            logger.warning(f"Message count mismatch: {processed_count} vs {total_messages}")
+
         # Cleanup GCS Source File (Zero Retention)
         try:
             blob.delete()
@@ -364,7 +377,7 @@ async def handle_event(request: Request):
         except Exception as cleanup_err:
             logger.error(f"Failed to cleanup GCS artifacts: {cleanup_err}")
 
-        job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and uploaded to Drive.", stage="complete")
+        safe_update_progress(job_id, 100, "completed", "Job complete. Mbox processed and uploaded to Drive.", stage="complete")
         
         # Cleanup Firestore Job Record (Strict Cleanup)
         try:
@@ -375,7 +388,7 @@ async def handle_event(request: Request):
 
     except Exception as e:
         logger.error(f"Job failed: {e}", exc_info=True)
-        job_service.update_progress(job_id, 0, "failed", f"Error: {str(e)}")
+        safe_update_progress(job_id, 0, "failed", f"Error: {str(e)}")
         
     finally:
         if temp_file and os.path.exists(temp_file):

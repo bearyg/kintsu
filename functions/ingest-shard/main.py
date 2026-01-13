@@ -1,6 +1,7 @@
 import functions_framework
 from google.cloud import storage, firestore
 from google import genai
+from google.genai import types
 import os
 import json
 import zipfile
@@ -80,13 +81,13 @@ def handle_zip_archive(bucket, blob):
 
 def extract_data_with_gemini(blob, mime_type):
     """
-    Uses Gemini 2.5 Pro to extract structured data from the file.
+    Uses Gemini 2.5 Flash to extract structured data from the file.
     """
     if not client:
         print("Gemini Client not initialized.")
         return None
 
-    print(f"Starting Gemini 2.5 Pro extraction for {blob.name} ({mime_type})")
+    print(f"Starting Gemini 2.5 Flash extraction for {blob.name} ({mime_type})")
     
     # 1. Download to temp file
     _, temp_local_filename = tempfile.mkstemp()
@@ -119,7 +120,7 @@ def extract_data_with_gemini(blob, mime_type):
         """
         
         response = client.models.generate_content(
-            model='gemini-2.5-pro',
+            model='gemini-2.5-flash',
             contents=[prompt, gemini_file]
         )
         
@@ -169,40 +170,35 @@ def process_new_shard(cloud_event):
 
     # 2. Identify Source Type
     parts = file_name.split('/')
+    
+    # CRITICAL: Ignore Worker Extraction Outputs
+    # Path: Hopper/gmail/extract_{job}/*
+    # This prevents the feedback loop where the mbox worker's output triggers this function
+    if len(parts) > 2 and parts[1] == 'gmail' and parts[2].startswith('extract_'):
+        print(f"Ignoring duplicate processing for extraction artifact: {file_name}")
+        return
+
     source_type = "Unknown"
     
     if len(parts) > 1 and parts[0] == 'Hopper':
-        if parts[1] == 'Extracted' and len(parts) > 3:
-            potential_source = parts[3]
+        if len(parts) > 1:
+            potential_source = parts[1]
             if potential_source in ['Amazon', 'Banking', 'Gmail', 'Photos']:
                 source_type = potential_source
             else:
                 source_type = "Extracted_Generic"
-        elif len(parts) > 2:
-            source_type = parts[1]
 
-    # 3. Create Initial Shard Record (DEPRECATED: Shards are not used, we read from Drive directly)
-    # shard_id = f"{source_type}_{blob.generation}"
-    
-    # shard_data = {
-    #     "id": shard_id,
-    #     "sourceType": source_type,
-    #     "filePath": file_name,
-    #     "fileName": os.path.basename(file_name),
-    #     "status": "unprocessed",
-    #     "size": blob.size,
-    #     "contentType": blob.content_type,
-    #     "createdAt": firestore.SERVER_TIMESTAMP
-    # }
-
-    # db.collection("shards").document(shard_id).set(shard_data)
-    # print(f"Shard {shard_id} indexed. Source: {source_type}")
+    # 3. Create Initial Shard Record (DISABLED)
+    # Shard creation is strictly disabled to prevent duplicates in Firestore.
+    # The source of truth is now Google Drive.
+    pass
 
     # 4. AI Extraction (The Refinery)
     supported_types = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
     
     if blob.content_type in supported_types and GEMINI_API_KEY:
-        # print(f"Refining shard {shard_id}...")
+        # Only process if explicitly supported and NOT ignored above
+        
         extracted_data = extract_data_with_gemini(blob, blob.content_type)
         
         if extracted_data:
@@ -236,15 +232,9 @@ def process_new_shard(cloud_event):
                 aggregator = InventoryAggregator(drive_adapter)
                 aggregator.append_item(kintsu_folder_id, extracted_data, os.path.basename(file_name))
 
-                # 3. Update Firestore (Status Only) - DEPRECATED
-                # db.collection("shards").document(shard_id).update({
-                #     "status": "refined",
-                #     "driveFileId": new_file.get('id'),
-                #     "refinedAt": firestore.SERVER_TIMESTAMP
-                # })
                 print(f"Shard refined (BYOS Mode).")
 
-                # 4. Cleanup Source Blob
+                # 3. Cleanup Source Blob
                 try:
                     print(f"Cleanup: Deleting processed shard {file_name}")
                     blob.delete()
@@ -253,16 +243,8 @@ def process_new_shard(cloud_event):
 
             except Exception as e:
                 print(f"BYOS/Drive Error: {e}")
-                # db.collection("shards").document(shard_id).update({
-                #     "status": "error",
-                #     "errorMsg": f"BYOS Error: {str(e)}"
-                # })
-
+ 
         else:
-             # db.collection("shards").document(shard_id).update({
-             #    "status": "error",
-             #    "errorMsg": "Gemini extraction failed"
-             # })
             pass
     else:
         print(f"Skipping refinement for {blob.content_type}")

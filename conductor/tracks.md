@@ -35,3 +35,4 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Implement the Google Takeout Ingestion Pipeline as an alternative to direct Gmail API access.
 *Link: [./conductor/tracks/takeout_ingestion_20260107/](./conductor/tracks/takeout_ingestion_20260107/)*
+\n---\n\n## [ ] Track: Gmail MBOX Processing & Extraction\n*Link: [./conductor/tracks/gmail_mbox_processing_20260110/](./conductor/tracks/gmail_mbox_processing_20260110/)*

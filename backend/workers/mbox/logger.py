@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime
 
 class DriveLogger:
@@ -7,13 +6,18 @@ class DriveLogger:
         """
         Initializes the logger.
         :param bucket: GCS Bucket object
-        :param log_path: Path to processing_log.json in GCS (e.g., Hopper/gmail/extract_.../processing_log.json)
+        :param log_path: Path to processing_log.json in GCS
         """
         self.bucket = bucket
         self.log_path = log_path
         self.log_data = {
             "start_time": datetime.utcnow().isoformat(),
-            "summary": {"processed": 0, "skipped": 0, "errors": 0},
+            "summary": {
+                "processed": 0, 
+                "skipped_duplicate": 0, 
+                "extracted_json": 0,
+                "error": 0
+            },
             "events": []
         }
     
@@ -30,8 +34,14 @@ class DriveLogger:
         self.log_data["events"].append(entry)
         
         # Update summary
-        if event_type in self.log_data["summary"]:
-            self.log_data["summary"][event_type] += 1
+        if event_type == "processed":
+            self.log_data["summary"]["processed"] += 1
+        elif event_type == "skipped":
+            self.log_data["summary"]["skipped_duplicate"] += 1
+        elif event_type == "extracted":
+            self.log_data["summary"]["extracted_json"] += 1
+        elif event_type == "error":
+            self.log_data["summary"]["error"] += 1
             
     def save(self):
         """
