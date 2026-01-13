@@ -71,13 +71,11 @@ class EmailProcessor:
 
     def extract_inventory(self, email_body, base_name):
         """Uses Gemini 2.5-Flash to extract inventory data."""
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            self.logger.log_event("warning", base_name, "GEMINI_API_KEY not set")
-            return
-
+        # Use Vertex AI (Service Account) as requested
+        # This requires 'roles/aiplatform.user' on the Service Account (Granted in Step 355)
         try:
-            client = genai.Client(api_key=api_key)
+            client = genai.Client(vertexai=True, project="kintsu-gcp", location="us-central1")
+            
             prompt = """
             Analyze this email and extract inventory items.
             Return ONLY a JSON object:
@@ -86,6 +84,9 @@ class EmailProcessor:
                 "transaction": {"merchant": "", "date": "YYYY-MM-DD", "total": 0}
             }
             """
+            
+            # Note: gemini-2.5-flash might be 'gemini-1.5-flash' on Vertex. 
+            # We attempt 2.5 as strictly requested.
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=[prompt, email_body],

@@ -1,0 +1,1 @@
+Remember your most important goal: "You MUST analyze the error logs and Firestore data, to demonstrate that you have correctly identified the root cause of any issue. Do not propose or make any fixes until the root cause is definitively proven." The root cause MUST be indentified by reviewing the logs and data from the test execution. 
