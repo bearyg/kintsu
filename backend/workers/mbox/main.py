@@ -89,6 +89,15 @@ class EmailProcessor:
             }
             """
             
+            
+            # Diagnostic: List available models to verify permissions
+            try:
+                models = client.models.list(config={'page_size': 100})
+                available_models = [m.name for m in models]
+                print(f"DEBUG: Available Models: {available_models}")
+            except Exception as e:
+                print(f"DEBUG: Failed to list models: {e}")
+
             # Using gemini-2.5-pro as per reference implementation default
             response = client.models.generate_content(
                 model="gemini-2.5-pro",

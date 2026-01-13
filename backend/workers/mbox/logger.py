@@ -43,6 +43,9 @@ class DriveLogger:
         elif event_type == "error":
             self.log_data["summary"]["error"] += 1
             
+        # Log to stdout for Cloud Logging visibility
+        print(json.dumps(entry))
+            
     def save(self):
         """
         Computes final stats and uploads log to GCS.
