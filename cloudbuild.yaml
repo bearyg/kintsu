@@ -47,7 +47,7 @@ steps:
         --trigger-http \
         --allow-unauthenticated \
         --memory=512Mi \
-        --set-env-vars=GEMINI_API_KEY=${_GEMINI_API_KEY} || true
+        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest || true
     waitFor: ['-']
 
   # 5. Deploy Ingest Shard Function
@@ -66,7 +66,7 @@ steps:
         --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
         --trigger-event-filters="bucket=kintsu-hopper-kintsu-gcp" \
         --memory=1024Mi \
-        --set-env-vars=GEMINI_API_KEY=${_GEMINI_API_KEY} || true
+        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest || true
     waitFor: ['-']
 
   # 6. Deploy Daily Cleanup Function
@@ -101,7 +101,8 @@ steps:
         --allow-unauthenticated \
         --memory 2048Mi \
         --timeout 900s \
-        --set-env-vars BUCKET_NAME=kintsu-hopper-kintsu-gcp,GEMINI_API_KEY=${_GEMINI_API_KEY}
+        --set-env-vars BUCKET_NAME=kintsu-hopper-kintsu-gcp \
+        --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
     waitFor: ['-']
 
   # --- Orchestrator Deployment (Wait for Backend Image + Functions) ---
@@ -126,7 +127,8 @@ steps:
         --allow-unauthenticated \
         --memory 1024Mi \
         --timeout 300s \
-        --set-env-vars ENVIRONMENT=production,AMAZON_PROCESSOR_URL=$$AMAZON_URL,GMAIL_INGEST_URL=$$GMAIL_URL,GEMINI_API_KEY=${_GEMINI_API_KEY}
+        --set-env-vars ENVIRONMENT=production,AMAZON_PROCESSOR_URL=$$AMAZON_URL,GMAIL_INGEST_URL=$$GMAIL_URL \
+        --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest
     waitFor: ['push-backend', 'deploy-amazon', 'deploy-gmail', 'deploy-shard', 'deploy-worker-mbox']
 
   # --- Frontend Stream (Parallel) ---
