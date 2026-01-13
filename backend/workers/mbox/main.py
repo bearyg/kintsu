@@ -76,10 +76,38 @@ class EmailProcessor:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             self.logger.log_event("warning", base_name, "GEMINI_API_KEY not set")
+            print("DEBUG: GEMINI_API_KEY environment variable is missing.")
             return
+
+        # Diagnostic: Log API Key details (Masked)
+        key_prefix = api_key[:10] if len(api_key) > 10 else "SHORT"
+        key_suffix = api_key[-5:] if len(api_key) > 5 else "SHORT"
+        print(f"DEBUG: Using API Key with Prefix: {key_prefix}... Suffix: ...{key_suffix} (Length: {len(api_key)})")
 
         try:
             client = genai.Client(api_key=api_key)
+            
+            # Diagnostic: List available models to verify permissions and API Key validity
+            try:
+                print("DEBUG: Attempting to list models...")
+                models = client.models.list(config={'page_size': 100})
+                available_models = [m.name for m in models]
+                print(f"DEBUG: Available Models: {available_models}")
+                
+                target_model = "gemini-2.5-pro"
+                if any(target_model in m for m in available_models):
+                     print(f"DEBUG: Target model '{target_model}' FOUND in available models.")
+                else:
+                     print(f"DEBUG: Target model '{target_model}' NOT FOUND in available models.")
+                     
+            except Exception as e:
+                print(f"DEBUG: Failed to list models. Error: {e}")
+                if hasattr(e, 'response'): 
+                    print(f"DEBUG: List Models Response Status: {e.response.status_code}")
+                    try: print(f"DEBUG: List Body: {e.response.text}")
+                    except: pass
+                if hasattr(e, 'details'): print(f"DEBUG: List Models Error Details: {e.details()}")
+
             prompt = """
             Analyze this email and extract inventory items.
             Return ONLY a JSON object:
@@ -89,15 +117,8 @@ class EmailProcessor:
             }
             """
             
+            print(f"DEBUG: invoking generate_content with model='gemini-2.5-pro'...")
             
-            # Diagnostic: List available models to verify permissions
-            try:
-                models = client.models.list(config={'page_size': 100})
-                available_models = [m.name for m in models]
-                print(f"DEBUG: Available Models: {available_models}")
-            except Exception as e:
-                print(f"DEBUG: Failed to list models: {e}")
-
             # Using gemini-2.5-pro as per reference implementation default
             response = client.models.generate_content(
                 model="gemini-2.5-pro",
@@ -110,9 +131,19 @@ class EmailProcessor:
                 blob = self.bucket.blob(json_path_rel)
                 blob.upload_from_string(response.text, content_type='application/json')
                 self.logger.log_event("extracted", base_name, "Inventory JSON saved")
+                print(f"DEBUG: Successfully extracted JSON for {base_name}")
 
         except Exception as e:
             self.logger.log_event("error", base_name, f"Gemini Extraction Failed: {e}")
+            print(f"DEBUG: CRITICAL GEMINI ERROR: {e}")
+            print(f"DEBUG: Error Type: {type(e)}")
+            if hasattr(e, 'response'):
+                print(f"DEBUG: HTTP Status: {e.response.status_code}")
+                # print(f"DEBUG: Headers: {e.response.headers}") # Headers can be noisy
+                try: print(f"DEBUG: Response Body: {e.response.text}")
+                except: pass
+            if hasattr(e, 'reason'): print(f"DEBUG: Reason Attribute: {e.reason}")
+            if hasattr(e, 'details'): print(f"DEBUG: Details: {e.details()}")
 
     def _get_html_body(self, message):
         body = ""
