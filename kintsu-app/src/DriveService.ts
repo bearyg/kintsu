@@ -373,4 +373,38 @@ export class DriveService {
     return await this.listHopperFiles();
   }
 
+
+  // --- File Actions ---
+
+  static async moveFile(fileId: string, currentParentId: string, newParentId: string): Promise<void> {
+    try {
+      // Drive API move requires removing old parent and adding new parent
+      await this._fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?addParents=${newParentId}&removeParents=${currentParentId}`, {
+        method: 'PATCH'
+      });
+    } catch (e) {
+      console.error("Error moving file:", e);
+      throw e;
+    }
+  }
+
+  static async ensureSpecialFolder(parentId: string, folderName: string): Promise<string> {
+    let folderId = await this.findFolder(folderName, parentId);
+    if (!folderId) {
+      console.log(`Creating special folder: ${folderName}`);
+      folderId = await this.createFolder(folderName, parentId);
+    }
+    return folderId;
+  }
+
+  static async excludeFile(fileId: string, currentParentId: string): Promise<void> {
+    const excludedId = await this.ensureSpecialFolder(currentParentId, '_excluded');
+    await this.moveFile(fileId, currentParentId, excludedId);
+  }
+
+  static async deleteFile(fileId: string, currentParentId: string): Promise<void> {
+    const deletedId = await this.ensureSpecialFolder(currentParentId, '_deleted');
+    await this.moveFile(fileId, currentParentId, deletedId);
+  }
+
 }

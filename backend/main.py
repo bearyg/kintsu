@@ -10,12 +10,15 @@ from typing import List, Optional
 from google import genai
 from google.cloud import firestore
 from job_service import JobService
+from routes import reporting
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', force=True)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.include_router(reporting.router)
+
 
 # Allow CORS
 app.add_middleware(

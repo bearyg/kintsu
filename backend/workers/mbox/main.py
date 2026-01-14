@@ -109,12 +109,22 @@ class EmailProcessor:
                 if hasattr(e, 'details'): print(f"DEBUG: List Models Error Details: {e.details()}")
 
             prompt = """
-            Analyze this email and extract inventory items.
+            Analyze this email and extract unique inventory items relevant to a property insurance claim.
+            
+            CRITICAL RULES:
+            1. INCLUDE only durable physical goods (e.g., Electronics, Furniture, Appliances, Clothing, Tools, Home Decor).
+            2. EXCLUDE strictly: 
+               - Groceries, Food, Beverages, Supplements, Perishables.
+               - Services, Subscriptions, Digital purchases (unless perpetual software licenses).
+               - Lottery tickets, Gas, Daily consumables (toiletries, cleaning supplies).
+               - Fees, Taxes, Tips, Discounts (unless part of a valid item's price).
+            
             Return ONLY a JSON object:
             {
                 "items": [{"name": "", "price": 0, "currency": "USD", "category": ""}],
                 "transaction": {"merchant": "", "date": "YYYY-MM-DD", "total": 0}
             }
+            If no valid items are found, return items as an empty list [].
             """
             
             print(f"DEBUG: invoking generate_content with model='gemini-2.5-pro'...")
@@ -127,11 +137,19 @@ class EmailProcessor:
             )
             
             if response.text:
-                json_path_rel = f"{self.base_path}/{base_name}.json"
-                blob = self.bucket.blob(json_path_rel)
-                blob.upload_from_string(response.text, content_type='application/json')
-                self.logger.log_event("extracted", base_name, "Inventory JSON saved")
-                print(f"DEBUG: Successfully extracted JSON for {base_name}")
+                try:
+                    data = json.loads(response.text)
+                    if data.get("items") and len(data["items"]) > 0:
+                        json_path_rel = f"{self.base_path}/{base_name}.json"
+                        blob = self.bucket.blob(json_path_rel)
+                        blob.upload_from_string(response.text, content_type='application/json')
+                        self.logger.log_event("extracted", base_name, f"Inventory JSON saved ({len(data['items'])} items)")
+                        print(f"DEBUG: Successfully extracted JSON for {base_name}")
+                    else:
+                        print(f"DEBUG: No relevant items found for {base_name}. Skipping JSON save.")
+                        self.logger.log_event("skipped_content", base_name, "No relevant items found")
+                except json.JSONDecodeError:
+                    print(f"DEBUG: Failed to parse JSON response for {base_name}")
 
         except Exception as e:
             self.logger.log_event("error", base_name, f"Gemini Extraction Failed: {e}")

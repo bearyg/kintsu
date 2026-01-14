@@ -1,9 +1,15 @@
+@antiGravity
+Please resume work on the **Reporting & Data Review Pipeline** track.
+We have just completed the **Planning** phase for **Phase 1: Data Review UI Foundation**.
 
-"We just finished refactoring the Refinery Stream to use Google Drive as the source of truth and fixed the race conditions. Those changes are pushed to 'dev'.
+**Context:**
+- You have already analyzed the codebase and created the `task.md` and `implementation_plan.md` in the artifacts directory (`.gemini/antigravity/brain/1ef0384d-bc69-4f79-b6e6-41a3cd903867/`).
+- The immediate goal is to implement the "Hopper" List View.
 
-Now, I'd like to:
-
-Verify that the new Drive-based stream is working correctly in the UI.
-Apply the insights from 
-documents/NotesOnModelTuning.md
- to our Gemini integration. Specifically, update the worker to set max_output_tokens (~2000) and adjust the temperature (increase it slightly) to prevent the 'repetition loops' we observed with the Flash/Pro models."
+**Action:**
+- Please read the existing `task.md` and `implementation_plan.md`.
+- Enter **EXECUTION** mode.
+- Begin implementing the changes outlined in the plan, specifically:
+    1. Updating `DriveService.ts` (adding `moveFile`, etc.).
+    2. Creating `components/Hopper/HopperList.tsx`.
+    3. Integrating into `App.tsx`.
