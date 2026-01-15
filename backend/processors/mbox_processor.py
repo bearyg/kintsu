@@ -62,8 +62,18 @@ class MboxProcessor:
              msg_id = message.get('Message-ID', '').strip() or f"no_id_{int(time.time()*100000)}"
              safe_name = "".join([c for c in msg_id if c.isalnum() or c in ('-','_')])
              
+             # Upload EML
+             try:
+                # message.as_bytes() might fail if not bytes, try as_string if needed or encode
+                eml_content = message.as_string()
+                self.drive.upload_file_content(f"{safe_name}.eml", eml_content, "message/rfc822", folder_id)
+             except Exception as e:
+                logger.error(f"Failed to save EML for {safe_name}: {e}")
+
+             # Upload HTML
+             self.drive.upload_file_content(f"{safe_name}.html", body, "text/html", folder_id)
+
              # Upload JSON
-             # We need a method in DriveServiceWrapper to upload string content
              self.drive.upload_file_content(f"{safe_name}.json", json.dumps(inventory, indent=2), "application/json", folder_id)
 
     def _get_html_body(self, message):

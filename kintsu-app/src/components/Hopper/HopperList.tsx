@@ -116,8 +116,30 @@ export const HopperList = ({ rootFolderId, onNavigate, onFolderChange, onFileSel
 
         setIsUploading(true);
         try {
-            await DriveService.uploadFile(file, currentFolderId);
+            const uploadedFile = await DriveService.uploadFile(file, currentFolderId);
             loadItems(currentFolderId);
+
+            // Auto-process Zip/Mbox files
+            if (file.name.endsWith('.zip') || file.name.endsWith('.mbox')) {
+                // Show a toast or status (using alert for now as quick feedback)
+                // ideally use a toast component if available, or just console log
+                console.log("Auto-triggering processing for:", file.name);
+
+                const API_BASE = import.meta.env.VITE_API_BASE;
+                fetch(`${API_BASE}/api/refine-drive-file`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file_id: uploadedFile.id,
+                        fileName: file.name,
+                        access_token: DriveService.accessToken,
+                        source_type: breadcrumbs[breadcrumbs.length - 1].name
+                    })
+                }).then(res => {
+                    if (res.ok) alert(`Processing started for ${file.name}`);
+                    else console.error("Auto-process failed to start");
+                });
+            }
         } catch (error) {
             console.error("[HopperList] Error uploading file:", error);
             alert("Upload failed");

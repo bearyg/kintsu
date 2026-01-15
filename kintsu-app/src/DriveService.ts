@@ -376,8 +376,39 @@ export class DriveService {
   }
 
   static async listRefinedFiles(): Promise<any[]> {
-    // For now, this is effectively the same as listHopperFiles but focused on consumption
-    return await this.listHopperFiles();
+    try {
+      console.log("Listing Refined Files...");
+      const kintsuId = await this.findFolder('Kintsu');
+      if (!kintsuId) return [];
+      const hopperId = await this.findFolder('Hopper', kintsuId);
+      if (!hopperId) return [];
+
+      // 1. Find all "Processed_*" folders in Hopper containers (e.g. Gmail)
+      // Logic: Iterate containers -> Find Processed folders -> List files
+      const containers = await this.listChildren(hopperId);
+      let allRefinedFiles: any[] = [];
+
+      for (const container of containers) {
+        if (container.mimeType === 'application/vnd.google-apps.folder') {
+          const subItems = await this.listChildren(container.id);
+
+          for (const item of subItems) {
+            if (item.mimeType === 'application/vnd.google-apps.folder' && item.name.startsWith('Processed_')) {
+              // Found a processed batch folder, get its files
+              const refinedFiles = await this.listChildren(item.id);
+              // Tag them
+              const tagged = refinedFiles.map(f => ({ ...f, sourceType: container.name }));
+              allRefinedFiles = [...allRefinedFiles, ...tagged];
+            }
+          }
+        }
+      }
+      return allRefinedFiles;
+
+    } catch (e) {
+      console.error("List Refined files error:", e);
+      return [];
+    }
   }
 
 
