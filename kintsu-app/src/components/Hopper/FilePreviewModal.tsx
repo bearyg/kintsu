@@ -1,4 +1,4 @@
-import { X, ExternalLink, Download, FileText, Code } from 'lucide-react';
+import { X, ExternalLink, FileText, Code } from 'lucide-react';
 import type { DriveItem } from './types';
 import { HtmlPreview } from './Previewers/HtmlPreview';
 import { JsonPreview } from './Previewers/JsonPreview';
