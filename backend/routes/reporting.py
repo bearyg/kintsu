@@ -4,7 +4,7 @@ from typing import List, Optional
 import logging
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from ..reporting.exporter import ReportExporter
+from reporting.exporter import ReportExporter
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
