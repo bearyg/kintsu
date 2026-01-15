@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, FileText, Image, CreditCard, HardDrive, Loader2, LogOut, Lock, RefreshCw } from 'lucide-react';
+import { Package, FileText, Image, CreditCard, HardDrive, Loader2, LogOut, Lock, RefreshCw, HelpCircle, X } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Timestamp } from 'firebase/firestore';
@@ -40,6 +40,71 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 // --- Components ---
+
+const TakeoutHelpModal = ({ onClose }: { onClose: () => void }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
+    <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between sticky top-0">
+        <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+          <HardDrive className="w-5 h-5 text-[#D4AF37]" />
+          How to Export from Gmail
+        </h3>
+        <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+          <X className="w-5 h-5 text-slate-400" />
+        </button>
+      </div>
+
+      <div className="p-6 overflow-y-auto">
+        <div className="prose prose-slate max-w-none">
+          <p className="lead text-lg text-slate-600 mb-6">
+            Kintsu uses <strong>Google Takeout</strong> to securely process your email history without requiring full inbox access.
+          </p>
+
+          <ol className="space-y-6 list-decimal list-outside ml-5">
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Go to Google Takeout</strong>
+              <a href="https://takeout.google.com" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
+                takeout.google.com
+              </a>
+            </li>
+
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Deselect All</strong>
+              <span className="text-slate-500">Click "Deselect all" at the top of the list. We only need Mail.</span>
+            </li>
+
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Select "Mail"</strong>
+              <span className="text-slate-500">Scroll down to "Mail" and check the box.</span>
+              <div className="mt-2 bg-blue-50 p-3 rounded-lg text-sm text-blue-800 border border-blue-100">
+                <strong>Tip:</strong> Click "All Mail data included" to filter for specific labels (e.g. "Purchases", "Amazon") to reduce file size.
+              </div>
+            </li>
+
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Create Export</strong>
+              <span className="text-slate-500">Click "Next step", keep "Export once" selected, and click "Create export".</span>
+            </li>
+
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Download & Upload</strong>
+              <span className="text-slate-500">
+                When emailed the link, download the <strong>.zip</strong> file.
+                Then, upload it to the <strong>Kintsu/Hopper/Gmail</strong> folder in your Google Drive.
+              </span>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button onClick={onClose} className="px-6 py-2 bg-[#0F172A] text-white rounded-xl font-bold hover:bg-slate-800 transition-colors">
+          Got it
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: string) => any }) => {
   const [data, setData] = useState<ExtractedData | null>(null);
@@ -172,7 +237,8 @@ function App() {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<DriveItem | null>(null);
 
-  const API_BASE = "https://kintsu-backend-351476623210.us-central1.run.app";
+  // Use localhost for local testing as requested by user
+  const API_BASE = import.meta.env.VITE_API_BASE;
 
   // Init App
   useEffect(() => {
@@ -224,8 +290,12 @@ function App() {
     }
   };
 
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [showTakeoutHelp, setShowTakeoutHelp] = useState(false);
+
   const handleScan = async () => {
     setIsScanning(true);
+    setStatusMessage("Scanning Hopper...");
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const isDebug = urlParams.get('debug') === 'on';
@@ -233,15 +303,18 @@ function App() {
       const files = await DriveService.listHopperFiles();
       const existingIds = new Set(shards.map(s => s.id));
 
+      let foundNew = false;
       for (const file of files) {
         const shardId = `drive_${file.id}`;
-        if (!existingIds.has(shardId)) {
+        // Process if new OR if it's a ZIP file (we might want to re-process zips if user asks, or check if processed)
+        // For now, let's just process whatever isn't tracked as a "shard" or just force process zips?
+        // The shard logic keeps track of processed files.
+        if (!existingIds.has(shardId) || file.name.endsWith('.zip')) {
+          foundNew = true;
+          setStatusMessage(`Processing: ${file.name}`);
           console.log(`Sending for refinement: ${file.name}${isDebug ? ' (DEBUG ON)' : ''}`);
 
           const apiUrl = new URL(`${API_BASE}/api/refine-drive-file`);
-          if (isDebug) {
-            apiUrl.searchParams.append('debug', 'on');
-          }
 
           await fetch(apiUrl.toString(), {
             method: 'POST',
@@ -255,8 +328,18 @@ function App() {
           });
         }
       }
+      if (!foundNew) setStatusMessage("No new files found.");
+      else setStatusMessage("Scan complete.");
+
+      // Refresh list
+      setTimeout(() => {
+        refreshRefineryStream();
+        setStatusMessage(null);
+      }, 2000);
+
     } catch (e) {
       console.error("Scan error:", e);
+      setStatusMessage("Scan failed.");
     } finally {
       setIsScanning(false);
     }
@@ -267,7 +350,9 @@ function App() {
       await DriveService.signIn();
       setIsSignedIn(true);
 
-      await DriveService.ensureHopperStructure();
+      setStatusMessage("Initializing Hopper...");
+      await DriveService.ensureHopperStructure((msg) => setStatusMessage(msg));
+      setStatusMessage(null);
 
       const kintsuId = await DriveService.findFolder('Kintsu');
       if (kintsuId) {
@@ -279,6 +364,7 @@ function App() {
 
     } catch (error) {
       console.error("Login failed:", error);
+      setStatusMessage("Login failed.");
     }
   };
 
@@ -358,6 +444,10 @@ function App() {
               <PhaseBadge step={4} label="Maximize" current={currentPhase} />
             </div>
 
+            <button onClick={() => setShowTakeoutHelp(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium mr-2">
+              <HelpCircle className="w-4 h-4" />
+              <span className="hidden md:inline">Takeout Help</span>
+            </button>
             <button onClick={handleLogout} className="text-slate-400 hover:text-slate-600">
               <LogOut className="w-5 h-5" />
             </button>
@@ -381,18 +471,43 @@ function App() {
         {/* Drive Browser (Hopper List) */}
         {currentFolderId && (
           <div className="mb-12">
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={handleScan}
-                disabled={isScanning}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-sm font-medium transition-all hover:border-[#D4AF37] hover:text-[#D4AF37]",
-                  isScanning && "text-[#D4AF37] border-[#D4AF37]"
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+
+              {/* Status Message Area */}
+              <div className="flex-1">
+                {statusMessage ? (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-left-4">
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span className="text-sm font-medium">{statusMessage}</span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-400 italic">
+                    Ready to scan. Upload your files to Drive.
+                  </div>
                 )}
-              >
-                <RefreshCw className={cn("w-4 h-4", isScanning && "animate-spin")} />
-                {isScanning ? "Scanning..." : "Scan Hopper for New Files"}
-              </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowTakeoutHelp(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  How to use Takeout?
+                </button>
+
+                <button
+                  onClick={handleScan}
+                  disabled={isScanning}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-sm font-medium transition-all hover:border-[#D4AF37] hover:text-[#D4AF37]",
+                    isScanning && "text-[#D4AF37] border-[#D4AF37]"
+                  )}
+                >
+                  <RefreshCw className={cn("w-4 h-4", isScanning && "animate-spin")} />
+                  {isScanning ? "Scanning..." : "Scan Hopper"}
+                </button>
+              </div>
             </div>
 
             <HopperList
@@ -404,6 +519,7 @@ function App() {
         )}
 
         <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+        {showTakeoutHelp && <TakeoutHelpModal onClose={() => setShowTakeoutHelp(false)} />}
 
         {/* Refinery Feed */}
         <div className="space-y-6">

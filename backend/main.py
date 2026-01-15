@@ -62,6 +62,10 @@ class JobRequest(BaseModel):
 
 # ... (omitting health check and other unrelated code blocks for brevity if not changing)
 
+from processors.mbox_processor import MboxProcessor
+from drive_client import DriveServiceWrapper
+import tempfile
+
 @app.post("/api/jobs/create")
 async def create_job(req: JobRequest):
     """
@@ -80,6 +84,44 @@ async def create_job(req: JobRequest):
     except Exception as e:
         logger.error(f"Failed to create job: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/refine-drive-file")
+async def refine_drive_file(req: RefineRequest, background_tasks: BackgroundTasks):
+    """
+    Refines a file directly from Drive (e.g. Takeout Zip).
+    """
+    logger.info(f"Received refine request for {req.fileName} ({req.file_id})")
+    
+    async def process_task(request: RefineRequest):
+        try:
+            drive = DriveServiceWrapper(request.access_token)
+            processor = MboxProcessor(drive)
+            
+            # Download file to temp
+            content = drive.get_file_content(request.file_id)
+            
+            with tempfile.TemporaryDirectory() as temp_dir:
+                file_path = os.path.join(temp_dir, request.fileName)
+                with open(file_path, "wb") as f:
+                    f.write(content)
+                
+                # Process
+                # Pass parent of the file as target folder? Or the file's own parent?
+                # For now, let's assume we put output in the same folder as the input file
+                # But we don't know the parent ID easily without querying.
+                # Let's query file to get parents
+                file_meta = drive.service.files().get(fileId=request.file_id, fields="parents").execute()
+                parents = file_meta.get('parents', [])
+                parent_id = parents[0] if parents else 'root'
+                
+                await processor.process_file(file_path, parent_id)
+                logger.info(f"Completed refinement for {request.fileName}")
+
+        except Exception as e:
+            logger.error(f"Refinement background task failed: {e}", exc_info=True)
+
+    background_tasks.add_task(process_task, req)
+    return {"status": "queued", "message": "Refinement started in background"}
 
 if __name__ == "__main__":
     import uvicorn

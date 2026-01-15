@@ -23,7 +23,7 @@ export const ReportGenerator = ({ folderId, onClose }: ReportGeneratorProps) => 
                 .filter(([_, enabled]) => enabled)
                 .map(([fmt]) => fmt);
 
-            const API_BASE = "https://kintsu-backend-351476623210.us-central1.run.app";
+            const API_BASE = import.meta.env.VITE_API_BASE;
 
             const response = await fetch(`${API_BASE}/api/reports/generate`, {
                 method: 'POST',

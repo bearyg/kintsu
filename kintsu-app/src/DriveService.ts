@@ -255,18 +255,22 @@ export class DriveService {
     return data.id;
   }
 
-  static async ensureHopperStructure(): Promise<void> {
+  static async ensureHopperStructure(onStatus?: (msg: string) => void): Promise<void> {
     try {
       // 1. Check/Create Root 'Kintsu'
+      if (onStatus) onStatus("Checking Kintsu root folder...");
       let kintsuId = await this.findFolder('Kintsu');
       if (!kintsuId) {
+        if (onStatus) onStatus("Creating Kintsu root folder...");
         console.log("Creating Kintsu root folder...");
         kintsuId = await this.createFolder('Kintsu');
       }
 
       // 2. Check/Create 'Hopper'
+      if (onStatus) onStatus("Checking Hopper folder...");
       let hopperId = await this.findFolder('Hopper', kintsuId);
       if (!hopperId) {
+        if (onStatus) onStatus("Creating Hopper folder...");
         console.log("Creating Hopper folder...");
         hopperId = await this.createFolder('Hopper', kintsuId);
       }
@@ -274,13 +278,16 @@ export class DriveService {
       // 3. Create Sub-containers
       const containers = ['Amazon', 'Banking', 'Gmail', 'Photos', 'Receipts'];
       for (const container of containers) {
+        if (onStatus) onStatus(`Checking ${container} container...`);
         const subId = await this.findFolder(container, hopperId);
         if (!subId) {
+          if (onStatus) onStatus(`Creating ${container} container...`);
           console.log(`Creating ${container} container...`);
           await this.createFolder(container, hopperId);
         }
       }
 
+      if (onStatus) onStatus("Hopper Structure Verified.");
       console.log("Hopper Structure Verified.");
 
     } catch (error) {

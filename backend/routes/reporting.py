@@ -2,8 +2,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import List, Optional
 import logging
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
+from drive_client import DriveServiceWrapper
 from reporting.exporter import ReportExporter
 
 router = APIRouter()
@@ -14,42 +13,6 @@ class ReportRequest(BaseModel):
     reportName: str
     formats: List[str] = ['pdf', 'csv', 'zip']
     accessToken: str
-
-class DriveServiceWrapper:
-    def __init__(self, access_token):
-        creds = Credentials(token=access_token)
-        self.service = build('drive', 'v3', credentials=creds)
-
-    async def ensure_folder(self, name: str, parent_id: str) -> str:
-        # Check if folder exists
-        query = f"mimeType='application/vnd.google-apps.folder' and name='{name}' and '{parent_id}' in parents and trashed=false"
-        results = self.service.files().list(q=query, fields="files(id, name)").execute()
-        files = results.get('files', [])
-        
-        if files:
-            return files[0]['id']
-        
-        # Create folder
-        file_metadata = {
-            'name': name,
-            'mimeType': 'application/vnd.google-apps.folder',
-            'parents': [parent_id]
-        }
-        file = self.service.files().create(body=file_metadata, fields='id').execute()
-        return file.get('id')
-
-    async def upload_file(self, filepath: str, folder_id: str) -> str:
-        from googleapiclient.http import MediaFileUpload
-        import os
-        
-        filename = os.path.basename(filepath)
-        file_metadata = {
-            'name': filename,
-            'parents': [folder_id]
-        }
-        media = MediaFileUpload(filepath, resumable=True)
-        file = self.service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        return file.get('id')
 
 @router.post("/api/reports/generate")
 async def generate_report(req: ReportRequest, background_tasks: BackgroundTasks):
