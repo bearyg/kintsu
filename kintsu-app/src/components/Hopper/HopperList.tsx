@@ -24,7 +24,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
 }
 
-export const HopperList = ({ rootFolderId, onNavigate, onFileSelect, className }: HopperListProps) => {
+export const HopperList = ({ rootFolderId, onNavigate, onFolderChange, onFileSelect, className }: HopperListProps) => {
     const [currentFolderId, setCurrentFolderId] = useState<string>(rootFolderId);
     const [items, setItems] = useState<DriveItem[]>([]);
     const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ id: rootFolderId, name: 'Hopper' }]);
@@ -74,22 +74,28 @@ export const HopperList = ({ rootFolderId, onNavigate, onFileSelect, className }
             console.log(`[HopperList] Navigating to: ${folderName} (${folderId})`);
         }
         setCurrentFolderId(folderId);
-        setBreadcrumbs(prev => [...prev, { id: folderId, name: folderName }]);
+        const newBreadcrumbs = [...breadcrumbs, { id: folderId, name: folderName }];
+        setBreadcrumbs(newBreadcrumbs);
         if (onNavigate) onNavigate(folderId);
+        if (onFolderChange) onFolderChange(folderId, folderName, newBreadcrumbs);
     };
 
     const handleBreadcrumbClick = (index: number) => {
         if (index === breadcrumbs.length - 1) return;
         const target = breadcrumbs[index];
-        setBreadcrumbs(prev => prev.slice(0, index + 1));
+        const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
+        setBreadcrumbs(newBreadcrumbs);
         setCurrentFolderId(target.id);
+        if (onFolderChange) onFolderChange(target.id, target.name, newBreadcrumbs);
     };
 
     const handleNavigateUp = () => {
         if (breadcrumbs.length <= 1) return;
         const parent = breadcrumbs[breadcrumbs.length - 2];
-        setBreadcrumbs(prev => prev.slice(0, prev.length - 1));
+        const newBreadcrumbs = breadcrumbs.slice(0, breadcrumbs.length - 1);
+        setBreadcrumbs(newBreadcrumbs);
         setCurrentFolderId(parent.id);
+        if (onFolderChange) onFolderChange(parent.id, parent.name, newBreadcrumbs);
     };
 
     const handleCreateFolder = async () => {

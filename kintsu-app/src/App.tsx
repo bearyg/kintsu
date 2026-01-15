@@ -235,6 +235,7 @@ function App() {
   const [isScanning, setIsScanning] = useState(false);
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [currentFolderName, setCurrentFolderName] = useState<string>('Hopper');
   const [previewFile, setPreviewFile] = useState<DriveItem | null>(null);
 
   // Use localhost for local testing as requested by user
@@ -272,8 +273,11 @@ function App() {
     setLoading(true);
     try {
       const files = await DriveService.listRefinedFiles();
+      // Filter for JSON sidecars only to avoid "PK" (Zip) parsing errors
+      const jsonFiles = files.filter(f => f.name.endsWith('.json'));
+
       // Map Drive files to Shard interface
-      const driveShards: Shard[] = files.map(f => ({
+      const driveShards: Shard[] = jsonFiles.map(f => ({
         id: f.id,
         fileName: f.name,
         sourceType: f.sourceType || 'Unknown',
@@ -444,10 +448,12 @@ function App() {
               <PhaseBadge step={4} label="Maximize" current={currentPhase} />
             </div>
 
-            <button onClick={() => setShowTakeoutHelp(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium mr-2">
-              <HelpCircle className="w-4 h-4" />
-              <span className="hidden md:inline">Takeout Help</span>
-            </button>
+            {currentFolderName === 'Gmail' && (
+              <button onClick={() => setShowTakeoutHelp(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium mr-2">
+                <HelpCircle className="w-4 h-4" />
+                <span className="hidden md:inline">Takeout Help</span>
+              </button>
+            )}
             <button onClick={handleLogout} className="text-slate-400 hover:text-slate-600">
               <LogOut className="w-5 h-5" />
             </button>
@@ -488,30 +494,35 @@ function App() {
               </div>
 
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowTakeoutHelp(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                  How to use Takeout?
-                </button>
+                {currentFolderName === 'Gmail' && (
+                  <button
+                    onClick={() => setShowTakeoutHelp(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    How to use Takeout?
+                  </button>
+                )}
 
-                <button
-                  onClick={handleScan}
-                  disabled={isScanning}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-sm font-medium transition-all hover:border-[#D4AF37] hover:text-[#D4AF37]",
-                    isScanning && "text-[#D4AF37] border-[#D4AF37]"
-                  )}
-                >
-                  <RefreshCw className={cn("w-4 h-4", isScanning && "animate-spin")} />
-                  {isScanning ? "Scanning..." : "Scan Hopper"}
-                </button>
+                {currentFolderName !== 'Hopper' && (
+                  <button
+                    onClick={handleScan}
+                    disabled={isScanning}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-sm font-medium transition-all hover:border-[#D4AF37] hover:text-[#D4AF37]",
+                      isScanning && "text-[#D4AF37] border-[#D4AF37]"
+                    )}
+                  >
+                    <RefreshCw className={cn("w-4 h-4", isScanning && "animate-spin")} />
+                    {isScanning ? "Scanning..." : "Scan Hopper"}
+                  </button>
+                )}
               </div>
             </div>
 
             <HopperList
               rootFolderId={currentFolderId}
+              onFolderChange={(_, name) => setCurrentFolderName(name)}
               onFileSelect={setPreviewFile}
               className="min-h-[500px]"
             />

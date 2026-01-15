@@ -19,6 +19,7 @@ export type ViewMode = 'list' | 'grid';
 export interface HopperListProps {
     rootFolderId: string;
     onNavigate?: (folderId: string) => void;
+    onFolderChange?: (folderId: string, folderName: string, path: Breadcrumb[]) => void;
     onFileSelect?: (file: DriveItem) => void;
     className?: string;
 }
