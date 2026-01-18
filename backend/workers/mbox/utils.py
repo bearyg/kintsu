@@ -12,7 +12,7 @@ def sanitize_filename(message_id):
     s = message_id.strip('<>')
     
     # Replace unsafe characters with underscore
-    # Allow alphanumeric, dash, underscore, dot
-    s = re.sub(r'[^a-zA-Z0-9\-\_\.]', '_', s)
+    # Allow alphanumeric, dash, underscore (replace dot with underscore)
+    s = re.sub(r'[^a-zA-Z0-9\-\_]', '_', s)
     
     return s

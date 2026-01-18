@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Package, FileText, Image, CreditCard, HardDrive, Loader2, UploadCloud, LogOut, Lock, RefreshCw, Folder, ChevronRight, CornerLeftUp, Plus } from 'lucide-react';
+import { Package, FileText, Image, CreditCard, HardDrive, Loader2, LogOut, Lock, RefreshCw, HelpCircle, X } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { Timestamp } from 'firebase/firestore';
 import { DriveService } from './DriveService';
-import { TakeoutWizard } from './components/TakeoutWizard';
+import { HopperList } from './components/Hopper/HopperList';
+import { FilePreviewModal } from './components/Hopper/FilePreviewModal';
+import type { DriveItem } from './components/Hopper/types';
 
 // --- Configuration ---
 const CLIENT_ID = "351476623210-j0s46m1ermc27qlret2rdn1iqg6re013.apps.googleusercontent.com";
@@ -29,6 +30,7 @@ interface Shard {
   sourceType: string;
   status: 'unprocessed' | 'refined' | 'error';
   driveFileId?: string;
+  webViewLink?: string;
   createdAt: Timestamp;
 }
 
@@ -38,6 +40,71 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 // --- Components ---
+
+const TakeoutHelpModal = ({ onClose }: { onClose: () => void }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
+    <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between sticky top-0">
+        <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+          <HardDrive className="w-5 h-5 text-[#D4AF37]" />
+          How to Export from Gmail
+        </h3>
+        <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+          <X className="w-5 h-5 text-slate-400" />
+        </button>
+      </div>
+
+      <div className="p-6 overflow-y-auto">
+        <div className="prose prose-slate max-w-none">
+          <p className="lead text-lg text-slate-600 mb-6">
+            Kintsu uses <strong>Google Takeout</strong> to securely process your email history without requiring full inbox access.
+          </p>
+
+          <ol className="space-y-6 list-decimal list-outside ml-5">
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Go to Google Takeout</strong>
+              <a href="https://takeout.google.com" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
+                takeout.google.com
+              </a>
+            </li>
+
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Deselect All</strong>
+              <span className="text-slate-500">Click "Deselect all" at the top of the list. We only need Mail.</span>
+            </li>
+
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Select "Mail"</strong>
+              <span className="text-slate-500">Scroll down to "Mail" and check the box.</span>
+              <div className="mt-2 bg-blue-50 p-3 rounded-lg text-sm text-blue-800 border border-blue-100">
+                <strong>Tip:</strong> Click "All Mail data included" to filter for specific labels (e.g. "Purchases", "Amazon") to reduce file size.
+              </div>
+            </li>
+
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Create Export</strong>
+              <span className="text-slate-500">Click "Next step", keep "Export once" selected, and click "Create export".</span>
+            </li>
+
+            <li className="pl-2">
+              <strong className="block text-slate-900 mb-1">Download & Upload</strong>
+              <span className="text-slate-500">
+                When emailed the link, download the <strong>.zip</strong> file.
+                Then, upload it to the <strong>Kintsu/Hopper/Gmail</strong> folder in your Google Drive.
+              </span>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button onClick={onClose} className="px-6 py-2 bg-[#0F172A] text-white rounded-xl font-bold hover:bg-slate-800 transition-colors">
+          Got it
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: string) => any }) => {
   const [data, setData] = useState<ExtractedData | null>(null);
@@ -62,10 +129,17 @@ const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: strin
     }
   }, [isRefined, shard.driveFileId, data]);
 
+  const handleClick = () => {
+    if (shard.webViewLink) {
+      window.open(shard.webViewLink, '_blank');
+    }
+  };
+
   return (
     <div
+      onClick={handleClick}
       className={cn(
-        "relative overflow-hidden rounded-xl border transition-all p-5 flex gap-5 group bg-white",
+        "relative overflow-hidden rounded-xl border transition-all p-5 flex gap-5 group bg-white cursor-pointer hover:bg-slate-50",
         isRefined
           ? "border-[#D4AF37]/30 shadow-md shadow-orange-100"
           : "border-slate-200 opacity-80"
@@ -85,7 +159,7 @@ const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: strin
 
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start mb-2">
-          <h4 className={cn("font-bold truncate pr-4", isRefined ? "text-slate-900" : "text-slate-500")}>
+          <h4 className={cn("font-bold truncate pr-4 group-hover:text-[#D4AF37] transition-colors", isRefined ? "text-slate-900" : "text-slate-500")}>
             {shard.fileName}
           </h4>
           <span className="text-xs font-mono text-slate-400 shrink-0">
@@ -157,20 +231,15 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [currentPhase] = useState(2);
   const [isSignedIn, setIsSignedIn] = useState(false);
-
   const [isInitializing, setIsInitializing] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
 
-  // Drive Browser State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [driveItems, setDriveItems] = useState<any[]>([]);
-  const [breadcrumbs, setBreadcrumbs] = useState<{ id: string, name: string }[]>([]);
-  const [browserLoading, setBrowserLoading] = useState(false);
+  const [currentFolderName, setCurrentFolderName] = useState<string>('Hopper');
+  const [previewFile, setPreviewFile] = useState<DriveItem | null>(null);
 
-  const API_BASE = "https://kintsu-backend-351476623210.us-central1.run.app";
-
-
+  // Use localhost for local testing as requested by user
+  const API_BASE = import.meta.env.VITE_API_BASE;
 
   // Init App
   useEffect(() => {
@@ -179,17 +248,16 @@ function App() {
         await DriveService.init(CLIENT_ID, API_KEY);
         setIsSignedIn(DriveService.isSignedIn);
         if (DriveService.isSignedIn) {
-          // User registration removed for strict scope compliance
-
-
           const kintsuId = await DriveService.findFolder('Kintsu');
           if (kintsuId) {
             const hopperId = await DriveService.findFolder('Hopper', kintsuId);
             if (hopperId) {
               setCurrentFolderId(hopperId);
-              setBreadcrumbs([{ id: hopperId, name: 'Hopper' }]);
             }
           }
+
+          // Initial Fetch of Refinery Stream (from Drive)
+          refreshRefineryStream();
         }
       } catch (error) {
         console.error("Failed to init Drive:", error);
@@ -198,92 +266,40 @@ function App() {
       }
     };
     initApp();
-
-    const q = query(collection(db, "shards"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newShards = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Shard[];
-      setShards(newShards);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
   }, []);
 
-  // Fetch Drive Items when folder changes
-  useEffect(() => {
-    if (!currentFolderId || !isSignedIn) return;
-    const fetchItems = async () => {
-      setBrowserLoading(true);
-      const items = await DriveService.listChildren(currentFolderId);
-      setDriveItems(items);
-      setBrowserLoading(false);
-    };
-    fetchItems();
-  }, [currentFolderId, isSignedIn]);
-
-  const handleNavigate = (folderId: string, folderName: string) => {
-    setCurrentFolderId(folderId);
-    setBreadcrumbs(prev => [...prev, { id: folderId, name: folderName }]);
-  };
-
-  const handleNavigateUp = () => {
-    if (breadcrumbs.length <= 1) return;
-    const newBreadcrumbs = [...breadcrumbs];
-    newBreadcrumbs.pop();
-    const parent = newBreadcrumbs[newBreadcrumbs.length - 1];
-    setBreadcrumbs(newBreadcrumbs);
-    setCurrentFolderId(parent.id);
-  };
-
-  const handleBreadcrumbClick = (index: number) => {
-    // If clicking the last item (current), do nothing
-    if (index === breadcrumbs.length - 1) return;
-
-    const targetCrumb = breadcrumbs[index];
-    const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
-
-    setBreadcrumbs(newBreadcrumbs);
-    setCurrentFolderId(targetCrumb.id);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0 || !currentFolderId) return;
-    const file = e.target.files[0];
-
-    setIsUploading(true);
+  const refreshRefineryStream = async () => {
+    if (!DriveService.isSignedIn) return;
+    setLoading(true);
     try {
-      await DriveService.uploadFile(file, currentFolderId);
-      // Refresh view
-      const items = await DriveService.listChildren(currentFolderId);
-      setDriveItems(items);
+      const files = await DriveService.listRefinedFiles();
+      // Filter for JSON sidecars only to avoid "PK" (Zip) parsing errors
+      const jsonFiles = files.filter(f => f.name.endsWith('.json'));
 
-      // Auto-Scan this single file (optional, or rely on Scan button)
-      console.log(`Sending for refinement: ${file.name}`);
-      // For MVP, user will click Scan All to process batch
-
-    } catch (error) {
-      console.error("Upload failed:", error);
-      alert("Upload failed.");
+      // Map Drive files to Shard interface
+      const driveShards: Shard[] = jsonFiles.map(f => ({
+        id: f.id,
+        fileName: f.name,
+        sourceType: f.sourceType || 'Unknown',
+        status: 'refined', // Assume anything in Hopper is "processed"
+        driveFileId: f.id,
+        webViewLink: f.webViewLink,
+        createdAt: Timestamp.now() // Estimate or use createdTime if we ask for it
+      }));
+      setShards(driveShards);
+    } catch (e) {
+      console.error("Failed to refresh stream:", e);
     } finally {
-      setIsUploading(false);
-      e.target.value = "";
+      setLoading(false);
     }
   };
 
-  const handleCreateFolder = async () => {
-    const name = prompt("Enter folder name:");
-    if (name && currentFolderId) {
-      await DriveService.createFolder(name, currentFolderId);
-      const items = await DriveService.listChildren(currentFolderId);
-      setDriveItems(items);
-    }
-  };
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [showTakeoutHelp, setShowTakeoutHelp] = useState(false);
 
   const handleScan = async () => {
     setIsScanning(true);
+    setStatusMessage("Scanning Hopper...");
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const isDebug = urlParams.get('debug') === 'on';
@@ -291,15 +307,18 @@ function App() {
       const files = await DriveService.listHopperFiles();
       const existingIds = new Set(shards.map(s => s.id));
 
+      let foundNew = false;
       for (const file of files) {
         const shardId = `drive_${file.id}`;
-        if (!existingIds.has(shardId)) {
+        // Process if new OR if it's a ZIP file (we might want to re-process zips if user asks, or check if processed)
+        // For now, let's just process whatever isn't tracked as a "shard" or just force process zips?
+        // The shard logic keeps track of processed files.
+        if (!existingIds.has(shardId) || file.name.endsWith('.zip')) {
+          foundNew = true;
+          setStatusMessage(`Processing: ${file.name}`);
           console.log(`Sending for refinement: ${file.name}${isDebug ? ' (DEBUG ON)' : ''}`);
 
           const apiUrl = new URL(`${API_BASE}/api/refine-drive-file`);
-          if (isDebug) {
-            apiUrl.searchParams.append('debug', 'on');
-          }
 
           await fetch(apiUrl.toString(), {
             method: 'POST',
@@ -313,8 +332,18 @@ function App() {
           });
         }
       }
+      if (!foundNew) setStatusMessage("No new files found.");
+      else setStatusMessage("Scan complete.");
+
+      // Refresh list
+      setTimeout(() => {
+        refreshRefineryStream();
+        setStatusMessage(null);
+      }, 2000);
+
     } catch (e) {
       console.error("Scan error:", e);
+      setStatusMessage("Scan failed.");
     } finally {
       setIsScanning(false);
     }
@@ -325,31 +354,28 @@ function App() {
       await DriveService.signIn();
       setIsSignedIn(true);
 
-      // User registration removed for strict scope compliance
-
-
-      await DriveService.ensureHopperStructure();
+      setStatusMessage("Initializing Hopper...");
+      await DriveService.ensureHopperStructure((msg) => setStatusMessage(msg));
+      setStatusMessage(null);
 
       const kintsuId = await DriveService.findFolder('Kintsu');
       if (kintsuId) {
         const hopperId = await DriveService.findFolder('Hopper', kintsuId);
         if (hopperId) {
           setCurrentFolderId(hopperId);
-          setBreadcrumbs([{ id: hopperId, name: 'Hopper' }]);
         }
       }
 
     } catch (error) {
       console.error("Login failed:", error);
+      setStatusMessage("Login failed.");
     }
   };
 
   const handleLogout = async () => {
     await DriveService.signOut();
     setIsSignedIn(false);
-    // User state removed
     setCurrentFolderId(null);
-    setBreadcrumbs([]);
   };
 
   const getIcon = (source: string) => {
@@ -378,6 +404,7 @@ function App() {
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-10 text-center">
           <img src="/kintsu-icon.jpeg" alt="Kintsu" className="w-20 h-20 rounded-2xl mx-auto mb-6 shadow-md" />
           <h1 className="text-3xl font-bold text-[#0F172A] mb-2">Welcome to Kintsu</h1>
+          <p className="text-xs font-mono text-slate-400 mb-6">(Version_0.02b)</p>
           <p className="text-slate-500 mb-8">
             Your private forensic recovery workspace.
             Connect your Google Drive to begin building your Hopper.
@@ -398,8 +425,6 @@ function App() {
     );
   }
 
-  const isGmailFolder = breadcrumbs.some(b => b.name === 'Gmail');
-
   // --- Main Interface ---
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 flex flex-col">
@@ -416,7 +441,6 @@ function App() {
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Timeline */}
             <div className="hidden md:flex items-center gap-1">
               <PhaseBadge step={1} label="Stabilize" current={currentPhase} />
               <PhaseBadge step={2} label="Collect" current={currentPhase} />
@@ -424,8 +448,12 @@ function App() {
               <PhaseBadge step={4} label="Maximize" current={currentPhase} />
             </div>
 
-
-
+            {currentFolderName === 'Gmail' && (
+              <button onClick={() => setShowTakeoutHelp(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium mr-2">
+                <HelpCircle className="w-4 h-4" />
+                <span className="hidden md:inline">Takeout Help</span>
+              </button>
+            )}
             <button onClick={handleLogout} className="text-slate-400 hover:text-slate-600">
               <LogOut className="w-5 h-5" />
             </button>
@@ -446,136 +474,63 @@ function App() {
           </p>
         </div>
 
-        {/* Drive Browser */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-12">
-          {/* Browser Header */}
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-              <HardDrive className="w-4 h-4" />
-              {breadcrumbs.map((crumb, i) => (
-                <div
-                  key={crumb.id}
-                  className="flex items-center gap-2"
-                  onClick={() => handleBreadcrumbClick(i)}
-                >
-                  {i > 0 && <ChevronRight className="w-3 h-3 text-slate-400" />}
-                  <span className={cn(
-                    i === breadcrumbs.length - 1
-                      ? "text-[#0F172A] font-bold cursor-default"
-                      : "cursor-pointer hover:text-[#D4AF37] hover:underline transition-colors"
-                  )}>
-                    {crumb.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCreateFolder}
-                className="p-2 hover:bg-white rounded-lg text-slate-500 transition-colors"
-                title="New Folder"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              {/* Scan All Button */}
-              <button
-                onClick={handleScan}
-                disabled={isScanning}
-                className={cn(
-                  "p-2 hover:bg-white rounded-lg transition-colors",
-                  isScanning ? "text-[#D4AF37] animate-spin" : "text-slate-500"
-                )}
-                title="Scan All Drive Files"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+        {/* Drive Browser (Hopper List) */}
+        {currentFolderId && (
+          <div className="mb-12">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
 
-          {/* Browser Content */}
-          <div className="p-6 min-h-[200px]">
-            {browserLoading ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="w-6 h-6 animate-spin text-slate-300" />
-              </div>
-            ) : driveItems.length === 0 ? (
-              isGmailFolder ? (
-                <TakeoutWizard userId="user-default" />
-              ) : (
-                <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-lg">
-                  Empty Folder
-                </div>
-              )
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Back Button (if not at root) */}
-                {breadcrumbs.length > 1 && (
-                  <div
-                    onClick={handleNavigateUp}
-                    className="p-4 rounded-lg border border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 text-slate-400"
-                  >
-                    <CornerLeftUp className="w-6 h-6" />
-                    <span className="text-xs font-medium">Back</span>
+              {/* Status Message Area */}
+              <div className="flex-1">
+                {statusMessage ? (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-left-4">
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span className="text-sm font-medium">{statusMessage}</span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-400 italic">
+                    Ready to scan. Upload your files to Drive.
                   </div>
                 )}
-
-                {driveItems.map(item => {
-                  const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => isFolder ? handleNavigate(item.id, item.name) : null}
-                      className={cn(
-                        "p-4 rounded-lg border flex flex-col items-center justify-center gap-3 text-center transition-all group",
-                        isFolder
-                          ? "cursor-pointer hover:border-[#D4AF37] hover:bg-orange-50/10 border-slate-200"
-                          : "border-slate-100 bg-slate-50 opacity-75"
-                      )}
-                    >
-                      {isFolder
-                        ? <Folder className="w-8 h-8 text-[#D4AF37]" />
-                        : <FileText className="w-8 h-8 text-slate-400" />
-                      }
-                      <span className="text-xs font-medium truncate w-full px-2">
-                        {item.name}
-                      </span>
-                    </div>
-                  )
-                })}
               </div>
-            )}
-          </div>
 
-          {/* Browser Footer (Actions) */}
-          <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-center">
-            <label
-              className={cn(
-                "inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer",
-                !isUploading
-                  ? "bg-[#0F172A] text-white hover:bg-slate-800"
-                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
-              )}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-4 h-4" />
-                  Upload File Here
-                </>
-              )}
-              <input
-                type="file"
-                className="hidden"
-                disabled={isUploading}
-                onChange={handleFileUpload}
-              />
-            </label>
+              <div className="flex items-center gap-3">
+                {currentFolderName === 'Gmail' && (
+                  <button
+                    onClick={() => setShowTakeoutHelp(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    How to use Takeout?
+                  </button>
+                )}
+
+                {currentFolderName !== 'Hopper' && (
+                  <button
+                    onClick={handleScan}
+                    disabled={isScanning}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-sm font-medium transition-all hover:border-[#D4AF37] hover:text-[#D4AF37]",
+                      isScanning && "text-[#D4AF37] border-[#D4AF37]"
+                    )}
+                  >
+                    <RefreshCw className={cn("w-4 h-4", isScanning && "animate-spin")} />
+                    {isScanning ? "Scanning..." : "Scan Hopper"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <HopperList
+              rootFolderId={currentFolderId}
+              onFolderChange={(_, name) => setCurrentFolderName(name)}
+              onFileSelect={setPreviewFile}
+              className="min-h-[500px]"
+            />
           </div>
-        </div>
+        )}
+
+        <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+        {showTakeoutHelp && <TakeoutHelpModal onClose={() => setShowTakeoutHelp(false)} />}
 
         {/* Refinery Feed */}
         <div className="space-y-6">

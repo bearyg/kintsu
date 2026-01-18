@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
 
 const SCOPES_LIST = [
   'https://www.googleapis.com/auth/drive.file'
@@ -31,8 +31,11 @@ export class DriveService {
           try {
             await gapi.client.init({
               apiKey: apiKey,
-              discoveryDocs: [DISCOVERY_DOC],
+              // discoveryDocs: [DISCOVERY_DOC], // Removed due to 502 errors
             });
+            // Skip loading Drive API via GAPI (502 error on discovery).
+            // We will use raw fetch instead.
+            // await gapi.client.load('drive', 'v3');
             break; // Success
           } catch (e: any) {
             console.warn(`GAPI Init failed, retrying... (${retries} left)`, e);
@@ -91,7 +94,7 @@ export class DriveService {
                     console.groupEnd();
                   }
 
-                  // Set token for GAPI calls
+                  // Set token for GAPI calls (legacy support if needed)
                   gapi.client.setToken(tokenResponse);
                 }
               },
@@ -170,7 +173,28 @@ export class DriveService {
     return !!this.accessToken;
   }
 
+  // --- Helper for Fetch calls ---
+  static async _fetch(endpoint: string, options: RequestInit = {}) {
+    if (!this.accessToken) throw new Error("Not signed in");
 
+    const headers = new Headers(options.headers || {});
+    headers.append('Authorization', `Bearer ${this.accessToken}`);
+
+    try {
+      const response = await fetch(endpoint, {
+        ...options,
+        headers: headers
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Drive API Error ${response.status}: ${errBody}`);
+      }
+      return response;
+    } catch (e) {
+      throw e;
+    }
+  }
 
   // --- Folder Management ---
 
@@ -180,16 +204,20 @@ export class DriveService {
 
   static async findFile(name: string, parentId: string = 'root', mimeType?: string): Promise<string | null> {
     try {
-      let query = `name='${name}' and '${parentId}' in parents and trashed=false`;
+      let q = `name='${name}' and '${parentId}' in parents and trashed=false`;
       if (mimeType) {
-        query += ` and mimeType='${mimeType}'`;
+        q += ` and mimeType='${mimeType}'`;
       }
-      const response = await gapi.client.drive.files.list({
-        q: query,
+
+      const params = new URLSearchParams({
+        q: q,
         fields: 'files(id, name)',
-        spaces: 'drive',
+        spaces: 'drive'
       });
-      const files = response.result.files;
+
+      const response = await this._fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`);
+      const data = await response.json();
+      const files = data.files;
       return files && files.length > 0 ? files[0].id : null;
     } catch (e) {
       console.error("Error finding file:", e);
@@ -199,11 +227,9 @@ export class DriveService {
 
   static async getFileContent(fileId: string): Promise<string> {
     try {
-      const response = await gapi.client.drive.files.get({
-        fileId: fileId,
-        alt: 'media',
-      });
-      return typeof response.body === 'string' ? response.body : JSON.stringify(response.result);
+      const response = await this._fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+      const text = await response.text();
+      return text;
     } catch (e) {
       console.error("Error getting file content:", e);
       throw e;
@@ -216,25 +242,35 @@ export class DriveService {
       mimeType: 'application/vnd.google-apps.folder',
       parents: [parentId],
     };
-    const response = await gapi.client.drive.files.create({
-      resource: fileMetadata,
-      fields: 'id',
+
+    const response = await this._fetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(fileMetadata)
     });
-    return response.result.id;
+
+    const data = await response.json();
+    return data.id;
   }
 
-  static async ensureHopperStructure(): Promise<void> {
+  static async ensureHopperStructure(onStatus?: (msg: string) => void): Promise<void> {
     try {
       // 1. Check/Create Root 'Kintsu'
+      if (onStatus) onStatus("Checking Kintsu root folder...");
       let kintsuId = await this.findFolder('Kintsu');
       if (!kintsuId) {
+        if (onStatus) onStatus("Creating Kintsu root folder...");
         console.log("Creating Kintsu root folder...");
         kintsuId = await this.createFolder('Kintsu');
       }
 
       // 2. Check/Create 'Hopper'
+      if (onStatus) onStatus("Checking Hopper folder...");
       let hopperId = await this.findFolder('Hopper', kintsuId);
       if (!hopperId) {
+        if (onStatus) onStatus("Creating Hopper folder...");
         console.log("Creating Hopper folder...");
         hopperId = await this.createFolder('Hopper', kintsuId);
       }
@@ -242,13 +278,16 @@ export class DriveService {
       // 3. Create Sub-containers
       const containers = ['Amazon', 'Banking', 'Gmail', 'Photos', 'Receipts'];
       for (const container of containers) {
+        if (onStatus) onStatus(`Checking ${container} container...`);
         const subId = await this.findFolder(container, hopperId);
         if (!subId) {
+          if (onStatus) onStatus(`Creating ${container} container...`);
           console.log(`Creating ${container} container...`);
           await this.createFolder(container, hopperId);
         }
       }
 
+      if (onStatus) onStatus("Hopper Structure Verified.");
       console.log("Hopper Structure Verified.");
 
     } catch (error) {
@@ -283,13 +322,16 @@ export class DriveService {
 
   static async listChildren(folderId: string): Promise<any[]> {
     try {
-      const resp = await gapi.client.drive.files.list({
+      const params = new URLSearchParams({
         q: `'${folderId}' in parents and trashed=false`,
-        fields: 'files(id, name, mimeType)',
-        pageSize: 100,
+        fields: 'files(id, name, mimeType, webViewLink)',
+        pageSize: '100',
         orderBy: 'folder,name'
       });
-      return resp.result.files || [];
+
+      const response = await this._fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`);
+      const data = await response.json();
+      return data.files || [];
     } catch (e) {
       console.error("List children error:", e);
       return [];
@@ -313,48 +355,94 @@ export class DriveService {
 
       console.log(`Found Hopper ID: ${hopperId}`);
 
-      // Recursive Walker
-      const allFiles: any[] = [];
+      // List all folders in Hopper to find source-specific subfolders (e.g. Gmail, Amazon)
+      const subfolders = await this.listChildren(hopperId);
+      let allFiles: any[] = [];
 
-      async function walk(folderId: string, folderName: string, depth: number = 0) {
-        console.log(`[Scan] Walking ${folderName} (${folderId}), depth ${depth}`);
-        if (depth > 4) return;
-
-        try {
-          const resp = await gapi.client.drive.files.list({
-            q: `'${folderId}' in parents and trashed=false`,
-            fields: 'files(id, name, mimeType)',
-            pageSize: 100
-          });
-
-          const items = resp.result.files || [];
-          console.log(`[Scan] Found ${items.length} items in ${folderName}`);
-
-          for (const item of items) {
-            // Log every item seen
-            console.log(`[Scan] Item: ${item.name} (${item.mimeType})`);
-
-            if (item.mimeType === 'application/vnd.google-apps.folder') {
-              await walk(item.id, item.name, depth + 1);
-            } else {
-              // It's a file
-              console.log(`[Scan] >>> Candidate File: ${item.name}`);
-              allFiles.push({ ...item, sourceType: folderName });
-            }
-          }
-        } catch (err) {
-          console.error(`[Scan] Error walking ${folderName}:`, err);
+      for (const item of subfolders) {
+        if (item.mimeType === 'application/vnd.google-apps.folder') {
+          // Fetch files from subfolder
+          const folderFiles = await this.listChildren(item.id);
+          // Tag them with source type
+          const taggedFiles = folderFiles.map(f => ({ ...f, sourceType: item.name }));
+          allFiles = [...allFiles, ...taggedFiles];
         }
       }
-
-      // Start scan at Hopper
-      await walk(hopperId, 'Hopper');
-      console.log(`[Scan] Complete. Total candidates: ${allFiles.length}`);
       return allFiles;
-
     } catch (e) {
-      console.error("List files error:", e);
+      console.error("List Hopper files error:", e);
       return [];
     }
   }
+
+  static async listRefinedFiles(): Promise<any[]> {
+    try {
+      console.log("Listing Refined Files...");
+      const kintsuId = await this.findFolder('Kintsu');
+      if (!kintsuId) return [];
+      const hopperId = await this.findFolder('Hopper', kintsuId);
+      if (!hopperId) return [];
+
+      // 1. Find all "Processed_*" folders in Hopper containers (e.g. Gmail)
+      // Logic: Iterate containers -> Find Processed folders -> List files
+      const containers = await this.listChildren(hopperId);
+      let allRefinedFiles: any[] = [];
+
+      for (const container of containers) {
+        if (container.mimeType === 'application/vnd.google-apps.folder') {
+          const subItems = await this.listChildren(container.id);
+
+          for (const item of subItems) {
+            if (item.mimeType === 'application/vnd.google-apps.folder' && item.name.startsWith('Processed_')) {
+              // Found a processed batch folder, get its files
+              const refinedFiles = await this.listChildren(item.id);
+              // Tag them
+              const tagged = refinedFiles.map(f => ({ ...f, sourceType: container.name }));
+              allRefinedFiles = [...allRefinedFiles, ...tagged];
+            }
+          }
+        }
+      }
+      return allRefinedFiles;
+
+    } catch (e) {
+      console.error("List Refined files error:", e);
+      return [];
+    }
+  }
+
+
+  // --- File Actions ---
+
+  static async moveFile(fileId: string, currentParentId: string, newParentId: string): Promise<void> {
+    try {
+      // Drive API move requires removing old parent and adding new parent
+      await this._fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?addParents=${newParentId}&removeParents=${currentParentId}`, {
+        method: 'PATCH'
+      });
+    } catch (e) {
+      console.error("Error moving file:", e);
+      throw e;
+    }
+  }
+
+  static async ensureSpecialFolder(parentId: string, folderName: string): Promise<string> {
+    let folderId = await this.findFolder(folderName, parentId);
+    if (!folderId) {
+      console.log(`Creating special folder: ${folderName}`);
+      folderId = await this.createFolder(folderName, parentId);
+    }
+    return folderId;
+  }
+
+  static async excludeFile(fileId: string, currentParentId: string): Promise<void> {
+    const excludedId = await this.ensureSpecialFolder(currentParentId, '_excluded');
+    await this.moveFile(fileId, currentParentId, excludedId);
+  }
+
+  static async deleteFile(fileId: string, currentParentId: string): Promise<void> {
+    const deletedId = await this.ensureSpecialFolder(currentParentId, '_deleted');
+    await this.moveFile(fileId, currentParentId, deletedId);
+  }
+
 }

@@ -10,12 +10,15 @@ from typing import List, Optional
 from google import genai
 from google.cloud import firestore
 from job_service import JobService
+from routes import reporting
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', force=True)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.include_router(reporting.router)
+
 
 # Allow CORS
 app.add_middleware(
@@ -53,118 +56,15 @@ class RefineRequest(BaseModel):
 class JobRequest(BaseModel):
     userId: str
     fileName: str
+    authToken: Optional[str] = None
+    folderId: Optional[str] = None
     debugMode: bool = False
 
-@app.get("/api/health")
-def health_check():
-    return {
-        "status": "ok", 
-        "gemini_ready": bool(GEMINI_API_KEY),
-        "amazon_processor_configured": bool(AMAZON_PROCESSOR_URL),
-        "gmail_ingest_configured": bool(GMAIL_INGEST_URL)
-    }
+# ... (omitting health check and other unrelated code blocks for brevity if not changing)
 
-async def save_shard(shard_data: dict, shard_id: str):
-    db.collection("shards").document(shard_id).set(shard_data)
-    logger.info(f"Saved shard: {shard_id}")
-
-async def process_single_file_generic(file_path: str, mime_type: str, original_filename: str, source_type: str, debug_mode: bool, parent_zip: str = None):
-    """
-    Fallback: Uploads a single file to Gemini and saves the shard.
-    Kept in backend for now as a catch-all.
-    """
-    try:
-        if debug_mode: logger.info(f"Processing single file (Generic): {original_filename} ({mime_type})")
-        
-        if not client:
-             logger.error("Gemini Client not configured.")
-             return
-
-        # Upload to Gemini
-        gemini_file = client.files.upload(file=file_path, config={'mime_type': mime_type})
-        
-        prompt = """
-        Analyze this document for an insurance claim. 
-        Extract ONLY JSON:
-        {
-            "item_name": "Name",
-            "merchant": "Store",
-            "date": "YYYY-MM-DD",
-            "total_amount": number,
-            "currency": "USD",
-            "category": "Type",
-            "confidence": "High/Med/Low"
-        }
-        """
-        
-        response = client.models.generate_content(
-            model='gemini-2.5-pro',
-            contents=[prompt, gemini_file]
-        )
-        text = response.text
-        
-        extracted_data = {}
-        try:
-            clean_text = text.replace('```json', '').replace('```', '').strip()
-            match = re.search(r'\{.*\}', clean_text, re.DOTALL)
-            if match: clean_text = match.group(0)
-            extracted_data = json.loads(clean_text)
-        except json.JSONDecodeError:
-            logger.error(f"JSON Parse Error for {original_filename}.")
-            extracted_data = {"item_name": "Unstructured Extraction", "raw_analysis": text, "confidence": "Low"}
-        
-        shard_id = f"drive_{os.path.basename(file_path)}_{source_type}"
-        shard_data = {
-            "id": shard_id,
-            "fileName": original_filename,
-            "sourceType": source_type,
-            "parentZip": parent_zip,
-            "status": "refined",
-            "extractedData": extracted_data,
-            "createdAt": firestore.SERVER_TIMESTAMP
-        }
-        await save_shard(shard_data, shard_id)
-        
-    except Exception as e:
-        logger.error(f"Error processing {original_filename}: {e}", exc_info=True)
-
-async def dispatch_amazon_processing(req: RefineRequest):
-    if not AMAZON_PROCESSOR_URL:
-        logger.error("Amazon Processor URL not configured.")
-        return
-
-    try:
-        logger.info(f"Dispatching to Amazon Processor: {req.fileName}")
-        
-        payload = {
-            "file_id": req.file_id,
-            "fileName": req.fileName,
-            "access_token": req.access_token,
-            "source_type": req.source_type,
-            "debug_mode": req.debug_mode
-        }
-        
-        resp = requests.post(AMAZON_PROCESSOR_URL, json=payload, timeout=300)
-        if resp.status_code == 200:
-            logger.info(f"Amazon Processor Success: {resp.json()}")
-        else:
-            logger.error(f"Amazon Processor Failed ({resp.status_code}): {resp.text}")
-
-    except Exception as e:
-        logger.error(f"Failed to dispatch Amazon job: {e}", exc_info=True)
-
-@app.post("/api/refine-drive-file")
-async def refine_drive_file(req: RefineRequest, background_tasks: BackgroundTasks, debug: Optional[str] = None):
-    # Override debug_mode if query param is present
-    if debug and debug.lower() in ['on', 'true', '1']:
-        req.debug_mode = True
-        
-    # Routing Logic
-    if req.source_type == 'Amazon' or 'Retail.OrderHistory' in req.fileName:
-        background_tasks.add_task(dispatch_amazon_processing, req)
-        return {"status": "queued", "message": f"Dispatched {req.fileName} to Amazon Processor"}
-    
-    return {"status": "skipped", "message": "Generic processing temporarily disabled during refactor."}
+from processors.mbox_processor import MboxProcessor
+from drive_client import DriveServiceWrapper
+import tempfile
 
 @app.post("/api/jobs/create")
 async def create_job(req: JobRequest):
@@ -172,12 +72,56 @@ async def create_job(req: JobRequest):
     Creates a new async job and returns a signed URL for uploading the file.
     """
     try:
-        result = job_service.create_job(req.userId, req.fileName, req.debugMode)
+        result = job_service.create_job(
+            req.userId, 
+            req.fileName, 
+            req.authToken, 
+            req.folderId, 
+            req.debugMode
+        )
         logger.info(f"Created Job {result['jobId']} for user {req.userId}")
         return result
     except Exception as e:
         logger.error(f"Failed to create job: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/refine-drive-file")
+async def refine_drive_file(req: RefineRequest, background_tasks: BackgroundTasks):
+    """
+    Refines a file directly from Drive (e.g. Takeout Zip).
+    """
+    logger.info(f"Received refine request for {req.fileName} ({req.file_id})")
+    
+    async def process_task(request: RefineRequest):
+        try:
+            drive = DriveServiceWrapper(request.access_token)
+            processor = MboxProcessor(drive)
+            
+            # Download file to temp
+            content = drive.get_file_content(request.file_id)
+            
+            with tempfile.TemporaryDirectory() as temp_dir:
+                file_path = os.path.join(temp_dir, request.fileName)
+                with open(file_path, "wb") as f:
+                    f.write(content)
+                
+                # Process
+                # Pass parent of the file as target folder? Or the file's own parent?
+                # For now, let's assume we put output in the same folder as the input file
+                # But we don't know the parent ID easily without querying.
+                # Let's query file to get parents
+                file_meta = drive.service.files().get(fileId=request.file_id, fields="parents").execute()
+                parents = file_meta.get('parents', [])
+                parent_id = parents[0] if parents else 'root'
+                
+                await processor.process_file(file_path, parent_id)
+                logger.info(f"Completed refinement for {request.fileName}")
+
+        except Exception as e:
+            logger.error(f"Refinement background task failed: {e}", exc_info=True)
+
+    background_tasks.add_task(process_task, req)
+    return {"status": "queued", "message": "Refinement started in background"}
 
 if __name__ == "__main__":
     import uvicorn

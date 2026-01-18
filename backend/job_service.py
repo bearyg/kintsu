@@ -13,7 +13,7 @@ class JobService:
         self.bucket_name = bucket_name
         self.bucket = storage_client.bucket(bucket_name)
 
-    def create_job(self, user_id: str, file_name: str, debug_mode: bool = False) -> dict:
+    def create_job(self, user_id: str, file_name: str, auth_token: str = None, folder_id: str = None, debug_mode: bool = False) -> dict:
         """
         Creates a new job record and generates a signed URL for file upload.
         """
@@ -28,6 +28,8 @@ class JobService:
             "fileName": file_name,
             "gcsPath": f"gs://{self.bucket_name}/{blob_name}",
             "debugMode": debug_mode,
+            "authToken": auth_token,  # Store for worker to use
+            "folderId": folder_id,    # Target Drive Folder
             "progress": 0,
             "logs": [],
             "createdAt": firestore.SERVER_TIMESTAMP,

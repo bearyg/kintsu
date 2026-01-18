@@ -5,13 +5,15 @@ import mailbox
 import tempfile
 import io
 import time
+import base64
 from fastapi import FastAPI, Request
 from google.cloud import storage, firestore
-from job_service import JobService  # Shared logic
+from job_service import JobService
 from utils import sanitize_filename
 from logger import DriveLogger
 from google import genai
 from google.genai import types
+from google.api_core.exceptions import NotFound
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,13 +32,9 @@ class EmailProcessor:
         self.logger = logger
         
     def process_message(self, message):
-        """
-        Extracts content from a message and saves EML/HTML files.
-        Returns: base_name (str) if processed, None if skipped/error.
-        """
+        """Extracts content and saves EML/HTML."""
         msg_id = message.get('Message-ID', '').strip()
         if not msg_id:
-            # Fallback for missing ID
             msg_id = f"no_id_{int(time.time()*1000)}"
             
         safe_name = sanitize_filename(msg_id)
@@ -45,14 +43,14 @@ class EmailProcessor:
         eml_path_rel = f"{self.base_path}/{safe_name}.eml"
         html_path_rel = f"{self.base_path}/{safe_name}.html"
         
-        # Idempotency Check (Check if EML exists)
+        # Idempotency
         blob = self.bucket.blob(eml_path_rel)
         if blob.exists():
             self.logger.log_event("skipped", msg_id, "Duplicate file exists")
-            return None
+            return safe_name
 
         try:
-            # 1. Save EML (Binary)
+            # 1. Save EML
             blob.upload_from_file(io.BytesIO(message.as_bytes()), content_type='message/rfc822')
             
             # 2. Extract & Save HTML
@@ -61,7 +59,7 @@ class EmailProcessor:
                 html_blob = self.bucket.blob(html_path_rel)
                 html_blob.upload_from_string(html_body, content_type='text/html')
                 
-                # 3. Gemini Extraction (Async-ish)
+                # 3. Gemini Analysis
                 self.extract_inventory(html_body, safe_name)
             
             self.logger.log_event("processed", msg_id, f"Saved to {safe_name}")
@@ -71,198 +69,257 @@ class EmailProcessor:
             self.logger.log_event("error", msg_id, str(e))
             return None
 
+
     def extract_inventory(self, email_body, base_name):
-        """
-        Uses Gemini to extract inventory data from the email body.
-        Saves result to <base_name>.json.
-        """
+        """Uses Gemini 2.5-Pro to extract inventory data."""
+        # Reverted to API Key as per reference implementation (geminiService.js)
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             self.logger.log_event("warning", base_name, "GEMINI_API_KEY not set")
+            print("DEBUG: GEMINI_API_KEY environment variable is missing.")
             return
+
+        # Diagnostic: Log API Key details (Masked)
+        key_prefix = api_key[:10] if len(api_key) > 10 else "SHORT"
+        key_suffix = api_key[-5:] if len(api_key) > 5 else "SHORT"
+        print(f"DEBUG: Using API Key with Prefix: {key_prefix}... Suffix: ...{key_suffix} (Length: {len(api_key)})")
 
         try:
             client = genai.Client(api_key=api_key)
             
+            # Diagnostic: List available models to verify permissions and API Key validity
+            try:
+                print("DEBUG: Attempting to list models...")
+                models = client.models.list(config={'page_size': 100})
+                available_models = [m.name for m in models]
+                print(f"DEBUG: Available Models: {available_models}")
+                
+                target_model = "gemini-2.5-pro"
+                if any(target_model in m for m in available_models):
+                     print(f"DEBUG: Target model '{target_model}' FOUND in available models.")
+                else:
+                     print(f"DEBUG: Target model '{target_model}' NOT FOUND in available models.")
+                     
+            except Exception as e:
+                print(f"DEBUG: Failed to list models. Error: {e}")
+                if hasattr(e, 'response'): 
+                    print(f"DEBUG: List Models Response Status: {e.response.status_code}")
+                    try: print(f"DEBUG: List Body: {e.response.text}")
+                    except: pass
+                if hasattr(e, 'details'): print(f"DEBUG: List Models Error Details: {e.details()}")
+
             prompt = """
-            Analyze this email and extract inventory items purchased or described.
-            Return ONLY a JSON object with this schema:
+            Analyze this email and extract unique inventory items relevant to a property insurance claim.
+            
+            CRITICAL RULES:
+            1. INCLUDE only durable physical goods (e.g., Electronics, Furniture, Appliances, Clothing, Tools, Home Decor).
+            2. EXCLUDE strictly: 
+               - Groceries, Food, Beverages, Supplements, Perishables.
+               - Services, Subscriptions, Digital purchases (unless perpetual software licenses).
+               - Lottery tickets, Gas, Daily consumables (toiletries, cleaning supplies).
+               - Fees, Taxes, Tips, Discounts (unless part of a valid item's price).
+            
+            Return ONLY a JSON object:
             {
-                "items": [
-                    {
-                        "name": "Item Name",
-                        "description": "Brief description",
-                        "price": 0.00,
-                        "currency": "USD",
-                        "category": "Electronics/Clothing/etc",
-                        "quantity": 1
-                    }
-                ],
-                "transaction": {
-                    "merchant": "Merchant Name",
-                    "date": "YYYY-MM-DD",
-                    "order_number": "Order #",
-                    "total_amount": 0.00,
-                    "currency": "USD"
-                }
+                "items": [{"name": "", "price": 0, "currency": "USD", "category": ""}],
+                "transaction": {"merchant": "", "date": "YYYY-MM-DD", "total": 0}
             }
-            If no inventory items are found, return items array as empty.
+            If no valid items are found, return items as an empty list [].
             """
             
+            print(f"DEBUG: invoking generate_content with model='gemini-2.5-pro'...")
+            
+            # Using gemini-2.5-pro as per reference implementation default
             response = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-2.5-pro",
                 contents=[prompt, email_body],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             
             if response.text:
-                json_content = response.text
-                
-                # Save JSON
-                json_path_rel = f"{self.base_path}/{base_name}.json"
-                blob = self.bucket.blob(json_path_rel)
-                blob.upload_from_string(json_content, content_type='application/json')
-                
-                self.logger.log_event("extracted", base_name, "Inventory JSON saved")
+                try:
+                    data = json.loads(response.text)
+                    if data.get("items") and len(data["items"]) > 0:
+                        json_path_rel = f"{self.base_path}/{base_name}.json"
+                        blob = self.bucket.blob(json_path_rel)
+                        blob.upload_from_string(response.text, content_type='application/json')
+                        self.logger.log_event("extracted", base_name, f"Inventory JSON saved ({len(data['items'])} items)")
+                        print(f"DEBUG: Successfully extracted JSON for {base_name}")
+                    else:
+                        print(f"DEBUG: No relevant items found for {base_name}. Skipping JSON save.")
+                        self.logger.log_event("skipped_content", base_name, "No relevant items found")
+                except json.JSONDecodeError:
+                    print(f"DEBUG: Failed to parse JSON response for {base_name}")
 
         except Exception as e:
             self.logger.log_event("error", base_name, f"Gemini Extraction Failed: {e}")
+            print(f"DEBUG: CRITICAL GEMINI ERROR: {e}")
+            print(f"DEBUG: Error Type: {type(e)}")
+            if hasattr(e, 'response'):
+                print(f"DEBUG: HTTP Status: {e.response.status_code}")
+                # print(f"DEBUG: Headers: {e.response.headers}") # Headers can be noisy
+                try: print(f"DEBUG: Response Body: {e.response.text}")
+                except: pass
+            if hasattr(e, 'reason'): print(f"DEBUG: Reason Attribute: {e.reason}")
+            if hasattr(e, 'details'): print(f"DEBUG: Details: {e.details()}")
 
     def _get_html_body(self, message):
         body = ""
         if message.is_multipart():
             for part in message.walk():
                 ctype = part.get_content_type()
-                cdispo = str(part.get('Content-Disposition'))
-                if ctype == 'text/html' and 'attachment' not in cdispo:
+                if ctype == 'text/html' and 'attachment' not in str(part.get('Content-Disposition')):
                     try:
-                        body = part.get_payload(decode=True).decode('utf-8', errors='replace')
-                        return body
-                    except:
-                        pass
+                        return part.get_payload(decode=True).decode('utf-8', errors='replace')
+                    except: pass
         else:
-            # Fallback to plain text if that's all there is, or try to get payload
              try:
-                 body = message.get_payload(decode=True).decode('utf-8', errors='replace')
-             except:
-                 pass
+                 return message.get_payload(decode=True).decode('utf-8', errors='replace')
+             except: pass
         return body
 
+def safe_update_progress(job_id, progress, status, message, stage=None):
+    if not job_id or job_id == "unknown": return
+    try:
+        job_service.update_progress(job_id, progress, status, message, stage=stage)
+    except NotFound:
+        logger.warning(f"Job {job_id} not found. Ignoring.")
+    except Exception as e:
+        logger.error(f"Failed to update progress: {e}")
+
 @app.post("/")
-async def handle_event(request: Request):
+async def handle_pubsub_event(request: Request):
     """
-    Handles Cloud Storage Object Finalized event via Eventarc.
+    Handles Pub/Sub Push Notification.
+    Format: {"message": {"data": "base64...", "attributes": {...}}, "subscription": "..."}
     """
-    event = await request.json()
-    logger.info(f"Received event: {event}")
+    try:
+        envelope = await request.json()
+    except Exception:
+        logger.error("Failed to parse JSON body")
+        return {"status": "error", "reason": "invalid_json"}
 
-    # Eventarc envelope for GCS
-    # Structure varies slightly by trigger type, assuming standard CloudEvent or AuditLog
-    # For Audit Log: protoPayload.resourceName
-    # For Direct notification: bucket, name
-    
-    # We'll assume direct notification or parsing common fields
-    bucket = event.get('bucket')
-    name = event.get('name')
-    
-    if not bucket or not name:
-        # Check if it's a CloudEvent format
-        if 'message' in event and 'data' in event['message']:
-             # Pub/Sub format
-             import base64
-             data = json.loads(base64.b64decode(event['message']['data']).decode('utf-8'))
-             bucket = data.get('bucket')
-             name = data.get('name')
-
-    if not bucket or not name:
-        logger.error("Could not parse GCS event")
+    if not envelope.get("message"):
+        logger.error("No message field in request")
         return {"status": "ignored"}
 
-    # Verify it's a job upload OR an extracted mbox
-    if name.startswith("uploads/"):
-        # Path: uploads/{userId}/{jobId}/{filename}
-        parts = name.split('/')
-        if len(parts) < 4:
-            logger.error(f"Invalid upload path: {name}")
-            return {"status": "error"}
-        job_id = parts[2]
-        user_id = parts[1]
-        
-    elif name.startswith("Hopper/Extracted/"):
-        # Path: Hopper/Extracted/{userId}/{jobId}/{filename}
-        parts = name.split('/')
-        if len(parts) < 5:
-             logger.error(f"Invalid extraction path: {name}")
-             return {"status": "ignored"}
-        
-        # Verify it is an mbox file
-        if not name.endswith(".mbox"):
-             return {"status": "ignored"}
-
-        user_id = parts[2]
-        job_id = parts[3]
-    else:
-        logger.info(f"Ignoring non-upload file: {name}")
-        return {"status": "ignored"}
+    pubsub_message = envelope["message"]
     
-    logger.info(f"Processing Job {job_id} for User {user_id}")
-    job_service.update_progress(job_id, 10, "processing", "Worker started. Downloading file...")
+    # Check attributes for routing (optional extra safety)
+    attributes = pubsub_message.get("attributes", {})
+    event_type = attributes.get("event_type")
+    
+    if event_type and event_type != "mbox":
+        logger.info(f"Ignoring event type: {event_type}")
+        return {"status": "ignored"}
+
+    # Decode Data
+    try:
+        data_str = base64.b64decode(pubsub_message["data"]).decode("utf-8")
+        event_data = json.loads(data_str)
+    except Exception as e:
+        logger.error(f"Failed to decode message data: {e}")
+        return {"status": "error"}
+
+    bucket = event_data.get("bucket")
+    name = event_data.get("name")
+    job_id = event_data.get("job_id", "unknown")
+    user_id = event_data.get("user_id", "unknown")
+
+    if not bucket or not name:
+        logger.error("Missing bucket/name in payload")
+        return {"status": "error"}
+
+    logger.info(f"Processing MBOX Job {job_id} for User {user_id} (File: {name})")
+
+    # Fetch Job & Auth
+    auth_token = None
+    if job_id != "unknown":
+        job_snap = db.collection("jobs").document(job_id).get()
+        if job_snap.exists:
+            auth_token = job_snap.get("authToken")
+    
+    safe_update_progress(job_id, 10, "processing", "Worker received job. Downloading...", stage="init")
+
+    # Initialize Drive Uploader
+    drive_uploader = None
+    target_folder_id = None
+    if auth_token:
+        try:
+            from drive_uploader import DriveUploader
+            drive_uploader = DriveUploader(auth_token)
+            target_folder_id = drive_uploader.ensure_path(['Kintsu', 'Hopper', 'Gmail'])
+        except Exception as e:
+            logger.error(f"Drive Init Failed: {e}")
 
     temp_file = None
     try:
-        # Download file
         blob = storage_client.bucket(bucket).blob(name)
         _, temp_file = tempfile.mkstemp()
         blob.download_to_filename(temp_file)
         
-        job_service.update_progress(job_id, 20, "processing", "File downloaded. Parsing Mbox...")
+        safe_update_progress(job_id, 20, "processing", "Parsing Mbox...", stage="extracting")
         
-        # Define Extraction Path
-        # Format: Hopper/gmail/extract_<zip_name>
+        # Setup paths
         mbox_name = os.path.basename(name).replace('.mbox', '')
+        # Output to GCS first: Hopper/gmail/extract_{mbox_name}
         extract_path = f"Hopper/gmail/extract_{mbox_name}"
-        
-        # Initialize Logger
         bucket_obj = storage_client.bucket(bucket)
-        log_path = f"{extract_path}/processing_log.json"
         
-        proc_logger = DriveLogger(bucket_obj, log_path)
-        
-        # Initialize Processor
+        proc_logger = DriveLogger(bucket_obj, f"{extract_path}/processing_log.json")
         processor = EmailProcessor(bucket_obj, extract_path, proc_logger)
         
-        # Parse Mbox
         mbox = mailbox.mbox(temp_file)
-        total_messages = len(mbox)
-        logger.info(f"Mbox contains {total_messages} messages")
+        total = len(mbox)
+        logger.info(f"Messages to process: {total}")
         
-        processed_count = 0
-        
-        for message in mbox:
-            processed_count += 1
-            if processed_count % 100 == 0:
-                progress = 20 + int((processed_count / total_messages) * 70) 
-                job_service.update_progress(job_id, progress, "processing", f"Processed {processed_count}/{total_messages} emails...")
-                proc_logger.save()
+        count = 0
+        for msg in mbox:
+            count += 1
+            if count % 50 == 0:
+                safe_update_progress(job_id, 30, "processing", f"Analyzed {count}/{total}...", stage="analyzing")
+                proc_logger.save() # periodic save
 
-            # Process Message
-            processor.process_message(message)
-        
-        # Final Log Save
+            res_name = processor.process_message(msg)
+            
+            # Upload to Drive
+            if res_name and drive_uploader and target_folder_id:
+                try:
+                    for ext, mime in [('.eml', 'message/rfc822'), ('.html', 'text/html'), ('.json', 'application/json')]:
+                        gcs_b = bucket_obj.blob(f"{extract_path}/{res_name}{ext}")
+                        if gcs_b.exists():
+                            content = gcs_b.download_as_text() if ext != '.eml' else gcs_b.download_as_string()
+                            drive_uploader.upload_file(f"{res_name}{ext}", content, mime, target_folder_id)
+                            gcs_b.delete() 
+                except Exception as e:
+                    logger.error(f"Drive upload failed for {res_name}: {e}")
+
+        # Finalize
         proc_logger.save()
+        if drive_uploader and target_folder_id:
+            try:
+                log_b = bucket_obj.blob(f"{extract_path}/processing_log.json")
+                if log_b.exists():
+                    drive_uploader.upload_file("processing_log.json", log_b.download_as_text(), "application/json", target_folder_id)
+            except: pass
+
+        safe_update_progress(job_id, 100, "completed", "Processing Complete", stage="done")
         
-        job_service.update_progress(job_id, 90, "processing", f"Extraction complete. Processed {processed_count} emails.")
+        # Cleanup Source Mbox
+        try:
+            blob.delete()
+            logger.info(f"Deleted source mbox: {name}")
+        except: pass
         
-        # Cleanup GCS File (Zero Retention)
-        blob.delete()
-        job_service.update_progress(job_id, 100, "completed", "Job complete. Mbox processed and deleted.")
+        # Cleanup Job
+        if job_id != "unknown":
+            try:
+                db.collection("jobs").document(job_id).delete()
+            except: pass
 
     except Exception as e:
-        logger.error(f"Job failed: {e}", exc_info=True)
-        job_service.update_progress(job_id, 0, "failed", f"Error: {str(e)}")
-        
+        logger.error(f"Fatal Error: {e}", exc_info=True)
+        safe_update_progress(job_id, 0, "failed", str(e))
     finally:
         if temp_file and os.path.exists(temp_file):
             os.remove(temp_file)
