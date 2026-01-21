@@ -117,8 +117,13 @@ const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: strin
       const fetchData = async () => {
         setLoading(true);
         try {
-          const content = await DriveService.getFileContent(shard.driveFileId!);
-          setData(JSON.parse(content));
+          // Only attempt to parse JSON sidecars to get metadata
+          if (shard.fileName.endsWith('.json')) {
+            const content = await DriveService.getFileContent(shard.driveFileId!);
+            setData(JSON.parse(content));
+          }
+          // For other files (html, eml) we don't need to parse them for this view 
+          // (or we could extract different metadata if needed)
         } catch (e) {
           console.error("Error loading sidecar:", e);
         } finally {
@@ -127,7 +132,7 @@ const RefinedShardItem = ({ shard, getIcon }: { shard: Shard, getIcon: (s: strin
       };
       fetchData();
     }
-  }, [isRefined, shard.driveFileId, data]);
+  }, [isRefined, shard.driveFileId, data, shard.fileName]);
 
   const handleClick = () => {
     if (shard.webViewLink) {
@@ -414,7 +419,7 @@ function App() {
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-10 text-center">
           <img src="/kintsu-icon.jpeg" alt="Kintsu" className="w-20 h-20 rounded-2xl mx-auto mb-6 shadow-md" />
           <h1 className="text-3xl font-bold text-[#0F172A] mb-2">Welcome to Kintsu</h1>
-          <p className="text-xs font-mono text-slate-400 mb-6">(Version_0.02d)</p>
+          <p className="text-xs font-mono text-slate-400 mb-6">(Version_0.02e)</p>
           <p className="text-slate-500 mb-8">
             Your private forensic recovery workspace.
             Connect your Google Drive to begin building your Hopper.

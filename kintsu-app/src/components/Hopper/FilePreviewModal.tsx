@@ -1,4 +1,6 @@
-import { X, ExternalLink, FileText, Code } from 'lucide-react';
+import { X, ExternalLink, FileText, Code, Loader2, FileType } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { DriveService } from '../../DriveService';
 import type { DriveItem } from './types';
 import { HtmlPreview } from './Previewers/HtmlPreview';
 import { JsonPreview } from './Previewers/JsonPreview';
@@ -13,6 +15,7 @@ export const FilePreviewModal = ({ file, onClose }: FilePreviewModalProps) => {
 
     const isHtml = file.mimeType === 'text/html' || file.name.endsWith('.html');
     const isJson = file.mimeType === 'application/json' || file.name.endsWith('.json');
+    const isEml = file.mimeType === 'message/rfc822' || file.name.endsWith('.eml');
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 md:p-8 animate-in fade-in duration-200">
@@ -24,7 +27,8 @@ export const FilePreviewModal = ({ file, onClose }: FilePreviewModalProps) => {
                         <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
                             {isJson && <Code className="w-6 h-6 text-purple-500" />}
                             {isHtml && <FileText className="w-6 h-6 text-orange-500" />}
-                            {!isJson && !isHtml && <FileText className="w-6 h-6" />}
+                            {isEml && <FileType className="w-6 h-6 text-blue-500" />}
+                            {!isJson && !isHtml && !isEml && <FileText className="w-6 h-6" />}
                         </div>
                         <div className="min-w-0">
                             <h3 className="font-bold text-slate-900 truncate">{file.name}</h3>
@@ -57,8 +61,11 @@ export const FilePreviewModal = ({ file, onClose }: FilePreviewModalProps) => {
                 <div className="flex-1 overflow-hidden bg-slate-50 p-4 relative">
                     {isHtml && <HtmlPreview fileId={file.id} />}
                     {isJson && <JsonPreview fileId={file.id} />}
+                    {isEml && (
+                        <FetcherWrapper fileId={file.id} render={(content) => <EmlPreview startContent={content} />} />
+                    )}
 
-                    {!isHtml && !isJson && (
+                    {!isHtml && !isJson && !isEml && (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400">
                             <p className="mb-4">Preview not available for this file type.</p>
                             {file.webViewLink && (
@@ -80,3 +87,34 @@ export const FilePreviewModal = ({ file, onClose }: FilePreviewModalProps) => {
         </div>
     );
 };
+
+const EmlPreview = ({ startContent }: { startContent?: string }) => {
+    return (
+        <div className="h-full overflow-auto bg-white p-4 font-mono text-xs whitespace-pre-wrap text-slate-700">
+            {startContent || "Loading content..."}
+        </div>
+    );
+};
+
+const FetcherWrapper = ({ fileId, render }: { fileId: string, render: (content: string) => React.ReactNode }) => {
+    const [content, setContent] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const text = await DriveService.getFileContent(fileId);
+                setContent(text);
+            } catch (e) {
+                console.error("Failed to load content", e);
+                setContent("Failed to load content.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, [fileId]);
+
+    if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
+    return <>{render(content || "")}</>;
+}

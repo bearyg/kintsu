@@ -21,7 +21,7 @@ class ReportExporter:
         data = await self._fetch_hopper_data(folder_id)
         
         # 2. Create Reports Folder
-        reports_folder_id = await self.drive.ensure_folder("Reports", parent_id=folder_id)
+        reports_folder_id = self.drive.ensure_folder("Reports", parent_id=folder_id)
         
         # 3. Generate Formats
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
