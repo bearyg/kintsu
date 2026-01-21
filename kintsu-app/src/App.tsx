@@ -273,11 +273,16 @@ function App() {
     setLoading(true);
     try {
       const files = await DriveService.listRefinedFiles();
-      // Filter for JSON sidecars only to avoid "PK" (Zip) parsing errors
-      const jsonFiles = files.filter(f => f.name.endsWith('.json'));
+      // Filter for all relevant files (JSON, EML, HTML)
+      // We want to see everything in the refinery stream now
+      const relevantFiles = files.filter(f =>
+        f.name.endsWith('.json') ||
+        f.name.endsWith('.eml') ||
+        f.name.endsWith('.html')
+      );
 
       // Map Drive files to Shard interface
-      const driveShards: Shard[] = jsonFiles.map(f => ({
+      const driveShards: Shard[] = relevantFiles.map(f => ({
         id: f.id,
         fileName: f.name,
         sourceType: f.sourceType || 'Unknown',
@@ -286,6 +291,11 @@ function App() {
         webViewLink: f.webViewLink,
         createdAt: Timestamp.now() // Estimate or use createdTime if we ask for it
       }));
+
+      // Sort: JSON first (metadata), then others? Or just alphabetical?
+      // User requested "sorted by name"
+      driveShards.sort((a, b) => a.fileName.localeCompare(b.fileName));
+
       setShards(driveShards);
     } catch (e) {
       console.error("Failed to refresh stream:", e);
@@ -404,7 +414,7 @@ function App() {
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-10 text-center">
           <img src="/kintsu-icon.jpeg" alt="Kintsu" className="w-20 h-20 rounded-2xl mx-auto mb-6 shadow-md" />
           <h1 className="text-3xl font-bold text-[#0F172A] mb-2">Welcome to Kintsu</h1>
-          <p className="text-xs font-mono text-slate-400 mb-6">(Version_0.02b)</p>
+          <p className="text-xs font-mono text-slate-400 mb-6">(Version_0.02d)</p>
           <p className="text-slate-500 mb-8">
             Your private forensic recovery workspace.
             Connect your Google Drive to begin building your Hopper.
@@ -449,10 +459,15 @@ function App() {
             </div>
 
             {currentFolderName === 'Gmail' && (
-              <button onClick={() => setShowTakeoutHelp(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium mr-2">
+              <a
+                href="/HowToUseTakeout.html"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium mr-2"
+              >
                 <HelpCircle className="w-4 h-4" />
                 <span className="hidden md:inline">Takeout Help</span>
-              </button>
+              </a>
             )}
             <button onClick={handleLogout} className="text-slate-400 hover:text-slate-600">
               <LogOut className="w-5 h-5" />
@@ -495,13 +510,15 @@ function App() {
 
               <div className="flex items-center gap-3">
                 {currentFolderName === 'Gmail' && (
-                  <button
-                    onClick={() => setShowTakeoutHelp(true)}
+                  <a
+                    href="/HowToUseTakeout.html"
+                    target="_blank"
+                    rel="noreferrer"
                     className="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
                   >
                     <HelpCircle className="w-4 h-4" />
                     How to use Takeout?
-                  </button>
+                  </a>
                 )}
 
                 {currentFolderName !== 'Hopper' && (

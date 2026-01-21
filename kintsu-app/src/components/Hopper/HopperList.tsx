@@ -110,19 +110,21 @@ export const HopperList = ({ rootFolderId, onNavigate, onFolderChange, onFileSel
         }
     };
 
+    const [processingStatus, setProcessingStatus] = useState<string | null>(null);
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
         const file = e.target.files[0];
 
         setIsUploading(true);
+        setProcessingStatus(null);
+
         try {
             const uploadedFile = await DriveService.uploadFile(file, currentFolderId);
             loadItems(currentFolderId);
 
             // Auto-process Zip/Mbox files
             if (file.name.endsWith('.zip') || file.name.endsWith('.mbox')) {
-                // Show a toast or status (using alert for now as quick feedback)
-                // ideally use a toast component if available, or just console log
                 console.log("Auto-triggering processing for:", file.name);
 
                 const API_BASE = import.meta.env.VITE_API_BASE;
@@ -136,8 +138,13 @@ export const HopperList = ({ rootFolderId, onNavigate, onFolderChange, onFileSel
                         source_type: breadcrumbs[breadcrumbs.length - 1].name
                     })
                 }).then(res => {
-                    if (res.ok) alert(`Processing started for ${file.name}`);
-                    else console.error("Auto-process failed to start");
+                    if (res.ok) {
+                        setProcessingStatus(`Processing started for ${file.name}`);
+                        // Clear status after 5 seconds
+                        setTimeout(() => setProcessingStatus(null), 5000);
+                    } else {
+                        console.error("Auto-process failed to start");
+                    }
                 });
             }
         } catch (error) {
@@ -343,30 +350,37 @@ export const HopperList = ({ rootFolderId, onNavigate, onFolderChange, onFileSel
             <div className="p-4 border-t border-slate-100 bg-slate-50/30">
                 {/* Only show upload if not at root (Hopper) level, to encourage organization */}
                 {breadcrumbs.length > 1 ? (
-                    <label className={cn(
-                        "flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed transition-all cursor-pointer font-medium text-sm",
-                        isUploading
-                            ? "bg-slate-50 border-slate-200 text-slate-400 cursor-wait"
-                            : "border-[#D4AF37]/50 bg-orange-50/50 text-[#D4AF37] hover:bg-orange-50 hover:border-[#D4AF37] hover:shadow-sm"
-                    )}>
-                        {isUploading ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Uploading...
-                            </>
-                        ) : (
-                            <>
-                                <UploadCloud className="w-4 h-4" />
-                                Upload File to "{breadcrumbs[breadcrumbs.length - 1].name}"
-                            </>
+                    <>
+                        <label className={cn(
+                            "flex items-center justify-center gap-2 w-full py-3 rounded-xl border transition-all cursor-pointer font-bold text-sm shadow-sm",
+                            isUploading
+                                ? "bg-slate-50 border-slate-200 text-slate-400 cursor-wait"
+                                : "bg-[#0F172A] text-white hover:bg-slate-800 border-transparent hover:shadow-md"
+                        )}>
+                            {isUploading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Uploading...
+                                </>
+                            ) : (
+                                <>
+                                    <UploadCloud className="w-4 h-4" />
+                                    Upload File to "{breadcrumbs[breadcrumbs.length - 1].name}"
+                                </>
+                            )}
+                            <input
+                                type="file"
+                                className="hidden"
+                                onChange={handleFileUpload}
+                                disabled={isUploading}
+                            />
+                        </label>
+                        {processingStatus && (
+                            <div className="mt-2 text-center text-xs text-green-600 font-medium animate-in fade-in slide-in-from-bottom-1">
+                                {processingStatus}
+                            </div>
                         )}
-                        <input
-                            type="file"
-                            className="hidden"
-                            onChange={handleFileUpload}
-                            disabled={isUploading}
-                        />
-                    </label>
+                    </>
                 ) : (
                     <p className="text-center text-xs text-slate-400 py-2">
                         Navigate to a subfolder to upload files
