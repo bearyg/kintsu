@@ -1,13 +1,56 @@
 Start Antigravity, Open a Terminal und Start Gemini cli. You then will be given the option to install the Antigravity IDE Extension. Install it. After that you can install the usual Extension like context7/conductor. Then with /settings you can set it up as you Like. You can Authenticate with your Google subscription. You dont have the task Option but something better: everytime you send a prompt the Cli Reads your Gemini.md here you can say what it has to do, Like a system prompt. For example you can say it should always read X.md before responding etc. 
 
-These issues should be addressed one by one. Please ask for any clarifications you may need. 
+Kintsu needs access to your receipts and order confirmations to process your claims. To keep your data private and secure, we ask you to provide a filtered export from Google Takeout instead of giving us full access to your email.
 
-1 - The upload files button on the Hopper display should be removed. We only want users to be able to upload files to specific folders. That gives the app a clue as to what type, or source, of data will be processed. No files can therefore be uploaded until all the sun-folders in the hopper folder are created.
+### Pre-Step: Create the Label in Gmail
+1.  Open Gmail.
+2.  In the search bar, paste this exact search:
+    ```
+    in:anywhere (receipt OR order OR "sales invoice") OR label:(^cob_sm_order OR ^cob_sm_cl_jc_order OR ^cob_sm_cl_llm_order)
+    ```
+3.  Click the "Select All" checkbox (and "Select all conversations that match this search").
+4.  Click the "Labels" icon -> "Create new" -> Name it **"Kintsu_Export"**.
 
 
-2 - While processing files succesfully, the status under "Processing Your Archive" says "failed (0%)" but the process is proceeding. The status icon is not being kept current with all of the phases or steps of processing. It may be helpful to add a "step" indicator to the status bar to show the current phase of processing. Since we know the count of how many emails have been extracted, we can show a percentage of the processing per step or phase of the processing. 
+Follow these steps to generate the file we need.
 
-3 - You are using wrong the model names. The use of "gemini-1.5-flash" has been deprecated and is not to be used. 
-Hence the error "Gemini Extraction Failed: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}" that is generated for all the processed emails. Use "gemini-2.5-pro" as the default model. Please review  the file "documents/gemini_model_management_spec.md" to see how the model name is to be managed. Please ask any questions you may have. 
+## Step 1: Go to Google Takeout
+1.  Open your browser and navigate to: **[https://takeout.google.com/](https://takeout.google.com/)**
+2.  Make sure you are signed in to the correct Google account.
 
-4 - Selecting a .html file in the google drive folder should open it in the browser, instead it shows the content of the file. An example of this is the file "53b7ed6828bd9736d7044f7c92d823cf442c1934-20269272-111369791_google_com.html" which was produced by the last test run of the app. 
+## Step 2: Deselect Everything
+By default, Google selects *all* your data (Photos, Drive, Maps, etc.). We don't want that!
+1.  Look for the "Select data to include" section.
+2.  Click the **"Deselect all"** button at the top of the list.
+    *(Placeholder: Screenshot of 'Deselect all' button)*
+
+## Step 3: Select Only "Mail"
+1.  Scroll down until you find **"Mail"**.
+2.  Check the box next to "Mail".
+    *(Placeholder: Screenshot of 'Mail' checkbox)*
+
+## Step 4: Filter Your Data (Crucial Step!)
+We only want specific emails (receipts & orders). Filtering reduces the file size and protects your privacy.
+1.  Click **"All Mail data included"**.
+2.  **Uncheck** "Include all messages in Mail".
+3.  **Check ONLY** the **"Kintsu_Export"** label.
+4.  Click **"OK"**.
+    *(Placeholder: Screenshot of Label selection)*
+
+## Step 5: Create Export
+1.  Scroll to the very bottom and click **"Next step"**.
+2.  **Destination:** "Send download link via email" (or "Add to Drive" if you prefer).
+3.  **Frequency:** "Export once".
+4.  **File type & size:** Leave as `.zip` and `2 GB`.
+5.  Click **"Create export"**.
+
+## Step 6: Upload to Kintsu
+1.  Wait for the email from Google (usually takes a few minutes for filtered exports).
+2.  Download the `.zip` file.
+3.  Drag and drop that `.zip` file into the Kintsu "Drop Zone".
+
+---
+**Why this method?**
+- **Privacy:** You only share specific emails.
+- **Security:** You don't give any app permanent access to your inbox.
+- **Control:** You can see exactly what is being exported before you send it.
